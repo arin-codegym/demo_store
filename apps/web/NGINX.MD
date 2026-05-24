@@ -46,7 +46,7 @@ sudo nano /etc/nginx/sites-available/app
   ```
   server {
     listen 80;
-    server_name 3.106.154.232;
+    server_name example.com;
 
     location /api/backend/ {
         proxy_pass http://127.0.0.1:8080/;
@@ -124,7 +124,7 @@ curl http://127.0.0.1:8080/health
 - Kiêm tra ngoài
 ```
 curl http://15.135.235.185
-curl http://3.106.154.232/
+curl http://example.com/
 curl http://15.135.235.185/api/product/featuredProducts
 ```
 
