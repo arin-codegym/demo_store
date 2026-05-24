@@ -51,7 +51,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/api/backend/login/oauth2/code/{registrationId}"
+            redirect-uri: "${FRONTEND_URL}/api/backend/login/oauth2/code/{registrationId}"
             scope:
               - openid
               - email
