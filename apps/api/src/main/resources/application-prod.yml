@@ -1,0 +1,92 @@
+# Production profile.
+# Pass values by Docker/Kubernetes environment variables. Required placeholders
+# have no default on purpose so the app fails fast when a secret is missing.
+
+spring:
+  ai:
+    # Custom app property used by HybridRagRetriever.
+    embedding:
+      dimensions: ${AI_EMBEDDING_DIMENSIONS:1536}
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: ${GEMINI_CHAT_MODEL:gemini-2.5-flash}
+            temperature: ${GEMINI_CHAT_TEMPERATURE:0.3}
+        embedding:
+          api-key: ${GEMINI_EMBEDDING_API_KEY:${GEMINI_API_KEY}}
+          text:
+            options:
+              model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+              dimensions: ${AI_EMBEDDING_DIMENSIONS:1536}
+
+  datasource:
+    # Example URL for Supabase pooler should be supplied via SPRING_DATASOURCE_URL.
+    # Keep prepareThreshold=0 in the URL when using Supabase transaction pooler.
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 60000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+  data:
+    redis:
+      # In docker-compose, redis is usually the service name.
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+
+  security:
+    refresh-hash-secret: ${REFRESH_HASH_SECRET}
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - email
+              - profile
+
+logging:
+  level:
+    root: INFO
+    com.quochuy: INFO
+    com.zaxxer.hikari: INFO
+    com.quochuy.mybatis.interceptor.MyBatisSqlLogInterceptor: INFO
+    org.springframework: WARN
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"
+
+management:
+  endpoint:
+    health:
+      # Do not expose DB/Redis details publicly in production.
+      show-details: never
+      show-components: never
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ${JWT_ISSUER:quochuy-store}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  frontend-url: ${FRONTEND_URL}
+
+stripe:
+  secret:
+    secret-key: ${STRIPE_SECRET_KEY}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+next:
+  revalidate:
+    products-url: ${NEXT_REVALIDATE_PRODUCTS_URL}
+    secret: ${NEXT_REVALIDATE_SECRET}

@@ -1,0 +1,46 @@
+# Base config loaded for every profile.
+# Do not put passwords, API keys, OAuth secrets, or JWT secrets in this file.
+
+spring:
+  profiles:
+    # Local runs use dev by default. Docker/prod should override with:
+    # SPRING_PROFILES_ACTIVE=prod
+    default: local
+  config:
+    # Shared AI classifier keywords.
+    import: optional:classpath:application-questions.yml
+  jmx:
+    enabled: false
+
+mybatis:
+  # All mapper XML files are profile-independent.
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.quochuy.store.model,com.quochuy.store.mapper,com.quochuy.ai.cache.model,com.quochuy.ai.chat.model,com.quochuy.ai.faq.model,com.quochuy.ai.rag.model
+  # Must match package com.quochuy.mybatis.typehandler.
+  type-handlers-package: com.quochuy.mybatis.typehandler
+  configuration:
+    # Map snake_case DB columns to camelCase Java fields.
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+
+app:
+  rag:
+    storage:
+      # Mounted volume path can override this in Docker.
+      local-root: ${RAG_STORAGE_LOCAL_ROOT:uploads/rag}
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      path-mapping:
+        health: health
+  endpoint:
+    health:
+      # Dev/prod profiles decide how much detail is exposed.
+      show-details: never
+      show-components: never
+      db:
+        enabled: true
+      redis:
+        enabled: true

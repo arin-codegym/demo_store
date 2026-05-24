@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.chat.conversation.mapper.ConversationMapper">
+
+    <resultMap id="ConversationResultMap"
+               type="com.quochuy.chat.conversation.model.Conversation">
+        <id property="conversationId" column="conversation_id"/>
+        <result property="type" column="type"/>
+        <result property="lastMessageId" column="last_message_id"/>
+        <result property="lastMessageAt" column="last_message_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insertConversation"
+            parameterType="com.quochuy.chat.conversation.model.Conversation"
+            useGeneratedKeys="true" keyProperty="conversationId">
+        INSERT INTO conversations (type,
+                                   assistant_code,
+                                   created_at,
+                                   updated_at)
+        VALUES (#{type},
+                #{assistantCode},
+                #{createdAt},
+                #{updatedAt})
+    </insert>
+
+    <select id="findById">
+        SELECT conversation_id,
+               type,
+               assistant_code,
+               created_at,
+               updated_at
+        FROM conversations
+        WHERE conversation_id = #{conversationId}
+    </select>
+
+    <select id="findDirectConversationIdBetweenUsers">
+        SELECT c.conversation_id
+        FROM conversations c
+                 INNER JOIN conversation_participants cp1 ON cp1.conversation_id = c.conversation_id
+                 INNER JOIN conversation_participants cp2 ON cp2.conversation_id = c.conversation_id
+        WHERE c.type = 'DIRECT'
+          AND cp1.user_id = #{currentUserId}
+          AND cp2.user_id = #{targetUserId} LIMIT 1
+    </select>
+
+    <select id="findAiConversationIdByUserIdAndAssistantCode">
+        select c.conversation_id
+        from conversations c
+                 inner join conversation_participants cp
+                            on cp.conversation_id = c.conversation_id
+        where cp.user_id = #{currentUserId}
+          and c.type = 'USER_AI'
+          and c.assistant_code = #{assistantCode}
+        order by c.created_at asc
+            limit 1
+    </select>
+
+    <update id="updateLastMessage">
+        UPDATE conversations
+        SET last_message_id = #{lastMessageId},
+            last_message_at = NOW(),
+            updated_at      = NOW()
+        WHERE conversation_id = #{conversationId}
+    </update>
+
+    <select id="findConversationSummaries"
+            resultType="com.quochuy.chat.conversation.dto.ConversationSummaryResponse">
+        SELECT c.conversation_id,
+               u.user_id         AS other_user_id,
+               u.username        AS other_user_name,
+               u.avatar_url      AS other_user_avatar_url,
+               m.message_id      AS last_message_id,
+               m.content         AS last_message_content,
+               c.last_message_at AS last_message_at,
+               (
+                   SELECT COUNT(*)
+                   FROM messages mx
+                            LEFT JOIN messages lr
+                                      ON lr.message_id = cp_self.last_read_message_id
+                   WHERE mx.conversation_id = c.conversation_id
+                     AND mx.sender_user_id != #{currentUserId}
+                AND (
+                cp_self.last_read_message_id IS NULL
+                OR mx.created_at > lr.created_at
+                )
+                ) AS unread_count
+        FROM conversations c
+            INNER JOIN conversation_participants cp_self
+        ON cp_self.conversation_id = c.conversation_id
+            AND cp_self.user_id = #{currentUserId}
+            INNER JOIN conversation_participants cp_other
+            ON cp_other.conversation_id = c.conversation_id
+            AND cp_other.user_id != #{currentUserId}
+            INNER JOIN users u
+            ON u.user_id = cp_other.user_id
+            LEFT JOIN messages m
+            ON m.message_id = c.last_message_id
+--         WHERE c.type = 'DIRECT'
+        ORDER BY c.last_message_at DESC, c.conversation_id DESC
+    </select>
+
+</mapper>

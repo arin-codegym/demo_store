@@ -1,0 +1,94 @@
+# Development profile.
+# Defaults here are for local development only. Real keys can still be passed
+# by environment variables without changing this file.
+
+spring:
+  ai:
+    # Custom app property used by HybridRagRetriever.
+    embedding:
+      dimensions: ${AI_EMBEDDING_DIMENSIONS:1536}
+    google:
+      genai:
+        # Set GEMINI_API_KEY locally when testing AI calls.
+        api-key: ${GEMINI_API_KEY:dummy-dev-gemini-key}
+        chat:
+          options:
+            model: ${GEMINI_CHAT_MODEL:gemini-2.5-flash}
+            temperature: ${GEMINI_CHAT_TEMPERATURE:0.3}
+        embedding:
+          api-key: ${GEMINI_EMBEDDING_API_KEY:${GEMINI_API_KEY:dummy-dev-gemini-key}}
+          text:
+            options:
+              model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+              dimensions: ${AI_EMBEDDING_DIMENSIONS:1536}
+
+  datasource:
+    # Override these when using Supabase or another remote database.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/store?prepareThreshold=0}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 60000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+
+  security:
+    # Dev fallback is intentionally non-secret. Use REFRESH_HASH_SECRET outside local dev.
+    refresh-hash-secret: ${REFRESH_HASH_SECRET:dev-refresh-hash-secret-change-me-32-bytes-min}
+    oauth2:
+      client:
+        registration:
+          google:
+            # Dummy defaults keep local startup simple; real OAuth login needs env values.
+            client-id: ${GOOGLE_CLIENT_ID:dev-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:dev-google-client-secret}
+            scope:
+              - openid
+              - email
+              - profile
+
+logging:
+  level:
+    root: INFO
+    com.quochuy: DEBUG
+    com.zaxxer.hikari: INFO
+    com.quochuy.mybatis.interceptor.MyBatisSqlLogInterceptor: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoint:
+    health:
+      # Dev can show component details for quick debugging.
+      show-details: always
+      show-components: always
+
+app:
+  jwt:
+    # HS256 needs a sufficiently long secret. Override in real environments.
+    secret: ${JWT_SECRET:dev-jwt-secret-change-me-32-bytes-minimum}
+    issuer: ${JWT_ISSUER:quochuy-store}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
+stripe:
+  secret:
+    # Stripe API calls need real env values; placeholders are for app startup only.
+    secret-key: ${STRIPE_SECRET_KEY:sk_test_dev_placeholder}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_dev_placeholder}
+
+next:
+  revalidate:
+    products-url: ${NEXT_REVALIDATE_PRODUCTS_URL:http://localhost:3000/api/revalidate/products}
+    secret: ${NEXT_REVALIDATE_SECRET:dev-revalidate-secret}

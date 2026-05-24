@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.ai.faq.mapper.FaqEntryMapper">
+
+    <resultMap id="FaqEntryResultMap" type="com.quochuy.ai.faq.model.FaqEntry">
+        <id property="faqId" column="faq_id"/>
+        <result property="intentCode" column="intent_code"/>
+        <result property="questionPatterns" column="question_patterns"/>
+        <result property="answerText" column="answer_text"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findAllEnabled" resultMap="FaqEntryResultMap">
+        select
+            faq_id,
+            intent_code,
+            question_patterns,
+            answer_text,
+            enabled,
+            created_at,
+            updated_at
+        from faq_entry
+        where enabled = true
+        order by created_at asc
+    </select>
+
+</mapper>

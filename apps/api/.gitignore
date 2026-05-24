@@ -1,0 +1,43 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+application-local.yml
+.zip
+
+# Local deploy/runtime secrets.
+# These files are used by scripts/sync-github-secrets.ps1 to upload GitHub
+# Actions secrets, but they must not be committed to the public repo.
+deploy/prod.env
+deploy/github-actions-secrets.env
+deploy/secrets.local.ps1
+*.pem
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/

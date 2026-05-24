@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.chat.message.mapper.ChatUserMapper">
+
+    <select id="selectChatTableUsers" resultType="com.quochuy.chat.conversation.dto.UserChatItemResponse">
+        SELECT
+        u.user_id ,
+        u.username ,
+        u.avatar_url
+        FROM users u
+        WHERE u.user_id != #{currentUserId}
+        <if test="keyword != null and keyword != ''">
+            AND LOWER(u.username) LIKE CONCAT('%', LOWER(#{keyword}), '%')
+        </if>
+        ORDER BY u.username ASC
+        LIMIT 20
+    </select>
+
+</mapper>

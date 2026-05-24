@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.ai.chat.mapper.AiMessageUsageMapper">
+
+    <insert id="insert" parameterType="com.quochuy.ai.chat.model.AiMessageUsage">
+        insert into ai_message_usage (
+        usage_id,
+        conversation_id,
+        user_message_id,
+        assistant_message_id,
+        provider,
+        model,
+        prompt_tokens,
+        completion_tokens,
+        total_tokens,
+        latency_ms,
+        status,
+        error_message,
+        created_at
+        ) values (
+        #{usageId},
+        #{conversationId},
+        #{userMessageId},
+        #{assistantMessageId},
+        #{provider},
+        #{model},
+        #{promptTokens},
+        #{completionTokens},
+        #{totalTokens},
+        #{latencyMs},
+        #{status},
+        #{errorMessage},
+        #{createdAt}
+        )
+    </insert>
+
+</mapper>

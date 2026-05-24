@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.store.mapper.UserAuthStateMapper">
+    <select id="loadAuthState" resultType="com.quochuy.redis.dto.AuthState">
+        SELECT status
+             , token_version
+        FROM users
+        WHERE user_id = #{userId}
+    </select>
+</mapper>

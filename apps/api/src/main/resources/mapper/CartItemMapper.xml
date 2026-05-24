@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.store.mapper.CartItemMapper">
+
+    <!--
+      Sử dụng tính năng ON CONFLICT của PostgreSQL (Upsert).
+      - Nếu chưa có cặp (cart_id, product_id): Thực hiện INSERT.
+      - Nếu đã có: Thực hiện UPDATE cộng dồn số lượng.
+    -->
+    <insert id="upsertCartItem">
+        INSERT INTO public.cart_items (cart_id, product_id, amount, updated_at)
+        VALUES (#{cartId},
+                #{productId},
+                #{amount},
+                CURRENT_TIMESTAMP) ON CONFLICT (cart_id, product_id)
+        DO
+        UPDATE SET
+            amount = cart_items.amount + EXCLUDED.amount,
+            updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <update id="updateCartItem">
+        UPDATE cart_items
+        SET amount     = #{amount},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE cart_item_id = #{cartItemId}
+    </update>
+
+    <delete id="removeItemCard">
+        DELETE
+        FROM cart_items
+        WHERE cart_item_id = #{cartItemId}
+    </delete>
+
+</mapper>

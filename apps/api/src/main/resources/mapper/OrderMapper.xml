@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.store.mapper.OrderMapper">
+
+    <select id="createOrder" resultType="Order">
+        INSERT INTO orders (products_count, order_total, tax, shipping, email, user_id, cart_id,
+                            idempotency_key)
+        VALUES (#{productsCount},
+                #{orderTotal},
+                #{tax},
+                #{shipping},
+                #{email},
+                #{userId},
+                #{cartId},
+                #{key}) RETURNING *;
+    </select>
+
+    <select id="findByIdempotencyKey" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE idempotency_key = #{key}
+    </select>
+
+    <select id="findPendingByUserId" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE user_id = #{userId}
+        AND status = 'PENDING'
+    </select>
+
+    <select id="findByOrderId" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+    <select id="findByOrderIdIsPaid" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE user_id = #{userId}
+        AND status = 'PAID'
+    </select>
+
+    <select id="getDashboardOrder" resultType="Order">
+        SELECT *
+        FROM orders
+        WHERE status = 'PAID'
+    </select>
+
+    <update id="updateOrderToPaid">
+        UPDATE orders
+        SET status = 'PAID'
+        WHERE order_id = #{oderId}
+    </update>
+
+    <delete id="deleteOrderIsPaid">
+        DELETE
+        FROM orders
+        WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

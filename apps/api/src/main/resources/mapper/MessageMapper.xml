@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.chat.message.mapper.MessageMapper">
+
+    <resultMap id="MessageResultMap" type="com.quochuy.chat.message.model.Message">
+        <id property="messageId" column="message_id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="senderUserId" column="sender_user_id"/>
+        <result property="clientMessageId" column="client_message_id"/>
+        <result property="content" column="content"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insertMessage">
+        INSERT INTO messages (message_id,
+                              conversation_id,
+                              sender_user_id,
+                              sender_type,
+                              client_message_id,
+                              content,
+                              status,
+                              created_at)
+        VALUES (#{messageId},
+                #{conversationId},
+                #{senderUserId},
+                #{senderType},
+                #{clientMessageId},
+                #{content},
+                #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}::message_status,
+                #{createdAt}
+                )
+    </insert>
+
+    <select id="findById">
+        SELECT message_id,
+               conversation_id,
+               sender_user_id,
+               client_message_id,
+               content,
+               status,
+               created_at
+        FROM messages
+        WHERE message_id = #{messageId} LIMIT 1
+    </select>
+
+    <select id="findRecentMessages" >
+        select *
+        from (
+                 select
+                     message_id,
+                     conversation_id,
+                     sender_user_id,
+                     sender_type,
+                     client_message_id,
+                     content,
+                     status,
+                     created_at
+                 from messages
+                 where conversation_id = #{conversationId}
+                 order by created_at desc
+                     limit #{limit}
+             ) t
+        order by created_at asc
+    </select>
+
+    <select id="findRecentUserMessages" >
+        SELECT *
+        FROM (
+                 SELECT
+                     message_id,
+                     conversation_id,
+                     sender_user_id,
+                     client_message_id,
+                     content,
+                     created_at,
+                     status,
+                     sender_type
+                 FROM messages
+                 WHERE conversation_id = #{conversationId}
+                   AND sender_type = 'USER'
+                 ORDER BY created_at DESC
+                     LIMIT #{limit}
+             ) t
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="findMessagesByConversationId" >
+        SELECT
+        m.message_id,
+        m.conversation_id,
+        m.sender_user_id,
+        m.client_message_id,
+        m.content,
+        m.status,
+        m.created_at
+        FROM messages m
+        WHERE m.conversation_id = #{conversationId}
+        <if test="beforeMessageId != null">
+            <![CDATA[
+            AND (
+            m.created_at < (
+            SELECT created_at
+            FROM messages
+            WHERE message_id = #{beforeMessageId}
+            )
+            OR (
+            m.created_at = (
+            SELECT created_at
+            FROM messages
+            WHERE message_id = #{beforeMessageId}
+            )
+            AND m.message_id < #{beforeMessageId}
+            )
+            )
+            ]]>
+        </if>
+        ORDER BY m.created_at DESC, m.message_id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findBySenderAndClientMessageId">
+        SELECT message_id,
+               conversation_id,
+               sender_user_id,
+               client_message_id,
+               content,
+               status,
+               created_at
+        FROM messages
+        WHERE sender_user_id = #{senderUserId}
+          AND client_message_id = #{clientMessageId} LIMIT 1
+    </select>
+
+
+</mapper>

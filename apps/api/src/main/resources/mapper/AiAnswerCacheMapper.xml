@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.ai.cache.mapper.AiAnswerCacheMapper">
+
+    <resultMap id="AiAnswerCacheResultMap" type="com.quochuy.ai.cache.model.AiAnswerCache">
+        <id property="cacheId" column="cache_id"/>
+        <result property="assistantCode" column="assistant_code"/>
+        <result property="normalizedQuestion" column="normalized_question"/>
+        <result property="answerText" column="answer_text"/>
+        <result property="source" column="source"/>
+        <result property="hitCount" column="hit_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="lastUsedAt" column="last_used_at"/>
+        <result property="expiredAt" column="expired_at"/>
+    </resultMap>
+
+    <select id="findReusableAnswer" resultMap="AiAnswerCacheResultMap">
+        select
+            cache_id,
+            assistant_code,
+            normalized_question,
+            answer_text,
+            source,
+            hit_count,
+            created_at,
+            last_used_at,
+            expired_at
+        from ai_answer_cache
+        where assistant_code = #{assistantCode}
+          and normalized_question = #{normalizedQuestion}
+          and (expired_at is null or expired_at > now())
+            limit 1
+    </select>
+
+    <insert id="insert" parameterType="com.quochuy.ai.cache.model.AiAnswerCache">
+        insert into ai_answer_cache (
+            cache_id,
+            assistant_code,
+            normalized_question,
+            answer_text,
+            source,
+            hit_count,
+            created_at,
+            last_used_at,
+            expired_at
+        ) values (
+                     #{cacheId},
+                     #{assistantCode},
+                     #{normalizedQuestion},
+                     #{answerText},
+                     #{source},
+                     #{hitCount},
+                     #{createdAt},
+                     #{lastUsedAt},
+                     #{expiredAt}
+                 )
+    </insert>
+
+    <update id="increaseHitCount">
+        update ai_answer_cache
+        set hit_count = hit_count + 1,
+            last_used_at = #{lastUsedAt}
+        where cache_id = #{cacheId}
+    </update>
+
+</mapper>

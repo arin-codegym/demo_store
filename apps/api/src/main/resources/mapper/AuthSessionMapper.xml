@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.store.mapper.AuthSessionMapper">
+
+    <resultMap id="AuthSessionMap" type="com.quochuy.store.model.AuthSession">
+        <id property="sessionId"
+            column="session_id"
+        />
+        <result property="userId" column="user_id"/>
+        <result property="refreshTokenHash" column="refresh_token_hash"/>
+
+        <result property="ipFirst" column="ip_first"/>
+        <result property="ipLast" column="ip_last"/>
+        <result property="uaFirst" column="ua_first"/>
+        <result property="uaLast" column="ua_last"/>
+
+        <result property="createdAt" column="created_at"/>
+        <result property="lastSeenAt" column="last_seen_at"/>
+        <result property="expiresAt" column="expires_at"/>
+
+        <result property="status" column="status"/>
+        <result property="revokedAt" column="revoked_at"/>
+        <result property="revokeReason" column="revoke_reason"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.quochuy.store.model.AuthSession">
+        INSERT INTO public.auth_sessions (
+        session_id, user_id, refresh_token_hash,
+        ip_first, ip_last, ua_first, ua_last,
+        created_at, last_seen_at, expires_at,
+        status
+        ) VALUES (
+        #{sessionId},
+        #{userId}, #{refreshTokenHash},
+        CAST(#{ipFirst} AS inet), CAST(#{ipLast} AS inet), #{uaFirst}, #{uaLast},
+        #{createdAt}, #{lastSeenAt}, #{expiresAt},
+        #{status}
+        )
+    </insert>
+
+    <select id="findActiveBySessionId" resultMap="AuthSessionMap">
+        SELECT *
+        FROM public.auth_sessions
+        WHERE session_id = #{sessionId}
+        AND status = 'ACTIVE'
+        AND expires_at > NOW()
+        LIMIT 1
+    </select>
+
+    <update id="updateLastSeen">
+        UPDATE public.auth_sessions
+        SET last_seen_at = #{lastSeenAt},
+        ip_last = CAST(#{ipLast} AS inet),
+        ua_last = #{uaLast}
+        WHERE session_id = #{sessionId}
+        AND status = 'ACTIVE'
+    </update>
+
+    <update id="revoke">
+        UPDATE public.auth_sessions
+        SET status = 'REVOKED',
+        revoked_at = #{revokedAt},
+        revoke_reason = #{reason}
+        WHERE session_id = #{sessionId}
+        AND status = 'ACTIVE'
+    </update>
+
+
+    <update id="rotateRefreshToken">
+        UPDATE public.auth_sessions
+            SET refresh_token_hash = #{newHash},
+            last_seen_at = #{lastSeenAt},
+            ip_last = CAST(#{ipLast} AS inet),
+            ua_last = #{uaLast},
+            expires_at = #{newExpiresAt}
+        WHERE session_id = #{sessionId}
+        AND status = 'ACTIVE'
+    </update>
+
+</mapper>

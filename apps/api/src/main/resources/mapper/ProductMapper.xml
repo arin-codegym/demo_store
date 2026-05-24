@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.store.mapper.ProductMapper">
+    <select id="fetchSingleProduct"
+            resultType="Product">
+        SELECT *
+        FROM products
+        WHERE product_id = #{productId}
+    </select>
+    
+    <select id="fetchFeaturedProducts"
+            resultType="Product">
+        SELECT *
+        FROM products
+        WHERE featured = true
+    </select>
+
+    <select id="fetchAllProducts"
+            resultType="Product">
+        SELECT *
+        FROM products
+        ORDER BY created_at
+    </select>
+
+    <select id="searchProducts"
+            resultType="Product">
+        SELECT *
+        FROM products
+                <where>
+                    <!--            <if test="search != null and search != ''">-->
+                    <!--                AND (-->
+                    <!--                name ILIKE CONCAT('%', #{search}, '%')-->
+                    <!--                OR company ILIKE CONCAT('%', #{search}, '%')-->
+                    <!--                )-->
+                    <!--            </if>-->
+                    <!--Tốc độ: Với 1 triệu dòng, LIKE có thể mất vài giây, nhưng FTS chỉ mất vài mili giây.
+                    Thông minh: Nó hiểu được các biến thể của từ (ví dụ: tìm "running" có thể ra cả "run" - áp dụng cho tiếng Anh).
+                    Xử lý dấu: Nếu bạn dùng ngôn ngữ hỗ trợ, nó có thể xử lý cả tìm kiếm có dấu và không dấu. -->
+                    <if test="search != null and search != ''">
+                        <bind name="searchPattern" value="search + ':*'"/>
+                        AND to_tsvector('english', coalesce(name,'') || ' ' || coalesce(company,''))
+                        @@ to_tsquery('english', #{searchPattern})
+                    </if>
+                </where>
+        ORDER BY created_at
+    </select>
+
+    <select id="fetchProductUserFavorites"
+            resultType="Product">
+        SELECT *
+        FROM products p
+        RIGHT JOIN  favorites f on p.product_id = f.product_id
+        WHERE f.user_id = #{userId}
+    </select>
+
+    <update id="updateProductImage" parameterType="map">
+        UPDATE products
+        SET image_url = #{imageUrl}
+        WHERE product_id = #{productId}
+    </update>
+
+    <update id="updateProduct" parameterType="map">
+        UPDATE products
+        SET name = #{name},
+            company = #{company},
+            featured = #{featured},
+            price = #{price},
+            description = #{description}
+        WHERE product_id = #{productId}
+    </update>
+
+    <select id="fetchAdminProducts" resultType="Product">
+        SELECT *
+        FROM products
+        ORDER BY created_at DESC
+    </select>
+
+    <delete id="deleteProduct" parameterType="map">
+        DELETE FROM products
+        WHERE product_id = #{productId}
+    </delete>
+
+    <select id="createProduct" resultType="Product" >
+        INSERT INTO products(
+            product_id ,
+            name,
+            company,
+            description,
+            featured,
+            image,
+            price,
+            created_at,
+            updated_at,
+            user_id
+        )
+        VALUES (
+                #{productId},
+                #{name},
+                #{company},
+                #{description},
+                #{featured},
+                #{image},
+                #{price},
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP,
+                #{userId}
+               )
+               RETURNING *;
+    </select>
+
+
+</mapper>

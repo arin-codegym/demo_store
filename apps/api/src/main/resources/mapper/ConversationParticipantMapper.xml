@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.chat.conversation.mapper.ConversationParticipantMapper">
+
+    <resultMap id="ConversationParticipantResultMap" type="com.quochuy.chat.conversation.model.ConversationParticipant">
+        <id property="conversationParticipantId" column="conversation_participant_id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="lastReadMessageId" column="last_read_message_id"/>
+        <result property="joinedAt" column="joined_at"/>
+    </resultMap>
+
+    <insert id="insertParticipant" parameterType="com.quochuy.chat.conversation.model.ConversationParticipant"
+            useGeneratedKeys="true" keyProperty="conversationParticipantId">
+        INSERT INTO conversation_participants (
+            conversation_id,
+            user_id,
+            last_read_message_id,
+            joined_at
+        ) VALUES (
+                     #{conversationId},
+                     #{userId},
+                     #{lastReadMessageId},
+                     #{joinedAt}
+                 )
+    </insert>
+
+    <select id="existsParticipant">
+        SELECT COUNT(*)
+        FROM conversation_participants
+        WHERE conversation_id = #{conversationId}
+          AND user_id = #{userId}
+    </select>
+
+    <select id="findUserIdsByConversationId">
+        SELECT user_id
+        FROM conversation_participants
+        WHERE conversation_id = #{conversationId}
+    </select>
+
+    <update id="updateLastReadMessageId">
+        UPDATE conversation_participants
+        SET last_read_message_id = #{lastReadMessageId}
+        WHERE conversation_id = #{conversationId}
+          AND user_id = #{userId}
+    </update>
+    <select id="countParticipant" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM conversation_participants
+        WHERE conversation_id = #{conversationId}
+          AND user_id = #{userId}
+    </select>
+
+    <update id="updateLastReadMessage">
+        UPDATE conversation_participants
+        SET last_read_message_id = #{lastReadMessageId}
+        WHERE conversation_id = #{conversationId}
+          AND user_id = #{userId}
+    </update>
+</mapper>

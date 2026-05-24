@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.ai.rag.mapper.RagChunkMapper">
+    <resultMap id="RagChunkResultMap" type="com.quochuy.ai.rag.dto.RagChunkSearchRow">
+        <result property="documentId" column="document_id"/>
+        <result property="chunkId" column="chunk_id"/>
+        <result property="sourceTitle" column="source_title"/>
+        <result property="content" column="content"/>
+        <result property="score" column="score"/>
+    </resultMap>
+
+    <select id="searchTopChunks" resultMap="RagChunkResultMap">
+        <![CDATA[
+        SELECT
+            CAST(rc.document_id AS varchar) AS document_id,
+            CAST(rc.id AS varchar) AS chunk_id,
+            rd.title AS source_title,
+            rc.chunk_text AS content,
+            1 - (rc.embedding_vector <=> CAST(#{queryVector} AS vector)) AS score
+        FROM public.rag_chunk rc
+        JOIN public.rag_document rd
+            ON rd.id = rc.document_id
+        WHERE rd.deleted = FALSE
+          AND rd.status = 'ACTIVE'
+          AND rd.assistant_code = #{assistantCode}
+          AND rc.embedding_vector IS NOT NULL
+        ORDER BY rc.embedding_vector <=> CAST(#{queryVector} AS vector)
+        LIMIT #{topK}
+        ]]>
+    </select>
+
+    <select id="searchTopChunksByTsv" resultMap="RagChunkResultMap">
+    <![CDATA[
+        SELECT
+            CAST(rc.document_id AS varchar) AS document_id,
+            CAST(rc.id AS varchar) AS chunk_id,
+            rd.title AS source_title,
+            rc.chunk_text AS content,
+            ts_rank(rc.chunk_tsv, plainto_tsquery('simple', #{keyword})) AS score
+        FROM public.rag_chunk rc
+                 JOIN public.rag_document rd
+                      ON rd.id = rc.document_id
+        WHERE rd.deleted = FALSE
+          AND rd.status = 'ACTIVE'
+          AND rd.assistant_code = #{assistantCode}
+          AND rc.chunk_tsv @@ plainto_tsquery('simple', #{keyword})
+        ORDER BY ts_rank(rc.chunk_tsv, plainto_tsquery('simple', #{keyword})) DESC
+            LIMIT #{topK}
+        ]]>
+</select>
+
+    <insert id="insert"
+            parameterType="com.quochuy.ai.rag.dto.RagChunk"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO rag_chunk (
+        document_id,
+        chunk_no,
+        chunk_text,
+        chunk_text_norm,
+        token_count,
+        char_count,
+        page_from,
+        page_to,
+        section_title,
+        metadata_json,
+        embedding_json,
+        embedding_vector,
+        created_at,
+        updated_at,
+        assistant_code,
+        ) VALUES (
+        #{documentId},
+        #{chunkNo},
+        #{chunkText},
+        #{chunkTextNorm},
+        #{tokenCount},
+        #{charCount},
+        #{pageFrom},
+        #{pageTo},
+        #{sectionTitle},
+        CAST(#{metadataJson} AS jsonb),
+        CAST(#{embeddingJson} AS jsonb),
+        CAST(#{embeddingVector} AS vector),
+        #{createdAt},
+        #{updatedAt},
+        #{assistantCode}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO rag_chunk (
+        document_id,
+        chunk_no,
+        chunk_text,
+        chunk_text_norm,
+        token_count,
+        char_count,
+        page_from,
+        page_to,
+        section_title,
+        metadata_json,
+        embedding_json,
+        embedding_vector,
+        created_at,
+        updated_at
+        )
+        VALUES
+        <foreach collection="items" item="item" separator=",">
+            (
+            #{item.documentId},
+            #{item.chunkNo},
+            #{item.chunkText},
+            #{item.chunkTextNorm},
+            #{item.tokenCount},
+            #{item.charCount},
+            #{item.pageFrom},
+            #{item.pageTo},
+            #{item.sectionTitle},
+            CAST(#{item.metadataJson} AS jsonb),
+            CAST(#{item.embeddingJson} AS jsonb),
+            CAST(#{item.embeddingVector} AS vector),
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteByDocumentId">
+        DELETE FROM rag_chunk
+        WHERE document_id = #{documentId}
+    </delete>
+
+</mapper>

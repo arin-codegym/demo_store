@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.store.mapper.CartMapper">
+    <resultMap id="CartWithItemsMap" type="com.quochuy.store.model.Cart">
+        <!--
+           1. Thông tin của bảng Carts (Cha)
+           LƯU Ý: property phải khớp 100% với biến trong class Java (camelCase)
+           column phải khớp với tên cột trong SQL (snake_case)
+         -->
+        <id property="cartId" column="cart_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="numItemsInCart" column="num_items_in_cart"/>
+        <result property="cartTotal" column="cart_total"/>
+        <result property="shipping" column="shipping"/>
+        <result property="tax" column="tax"/>
+        <result property="orderTotal" column="order_total"/>
+
+        <!--
+  2. <collection>: Ánh xạ danh sách món hàng (List<CartItem>)
+  - property: cartItems (Khớp với private List<CartItem> cartItems)
+-->
+        <collection property="cartItems" ofType="com.quochuy.store.model.CartItem">
+            <id property="cartItemId" column="cart_item_id"/>
+            <result property="amount" column="amount"/>
+            <result property="cartId" column="ci_cart_id"/>
+            <result property="productId" column="ci_product_id"/>
+
+            <!--
+              3. <association>: Ánh xạ thông tin sản phẩm (1-1)
+              - property: product (Khớp với private Product product trong CartItem)
+            -->
+            <association property="product" javaType="com.quochuy.store.model.Product">
+                <id property="productId" column="p_product_id"/>
+                <result property="name" column="product_name"/>
+                <result property="image" column="product_image"/>
+                <result property="price" column="product_price"/>
+                <result property="company" column="product_company"/>
+            </association>
+        </collection>
+    </resultMap>
+    <!--
+      Lấy thông tin giỏ hàng theo User ID.
+      Kết quả trả về sẽ bao gồm các con số tổng đã được Trigger tự động tính toán.
+    -->
+    <select id="fetchCartByUser" resultMap="CartWithItemsMap">
+        SELECT
+            -- Cột bảng Carts
+            c.cart_id,
+            c.user_id,
+            c.num_items_in_cart,
+            c.cart_total,
+            c.shipping,
+            c.tax,
+            c.order_total,
+            -- Cột bảng CartItems (Đổi tên để tránh trùng lặp)
+            ci.cart_item_id,
+            ci.amount,
+            ci.cart_id    as ci_cart_id,
+            ci.product_id as ci_product_id,
+            -- Cột bảng Products
+            p.product_id  as p_product_id,
+            p.name        as product_name,
+            p.image       as product_image,
+            p.price       as product_price,
+            p.company     as product_company
+        FROM public.carts c
+                 LEFT JOIN public.cart_items ci ON c.cart_id = ci.cart_id
+                 LEFT JOIN public.products p ON ci.product_id = p.product_id
+        WHERE c.user_id = #{userId}
+        ORDER BY ci.created_at DESC
+    </select>
+
+    <select id="findByCartId" resultMap="CartWithItemsMap">
+        SELECT
+            -- Cột bảng Carts
+            c.cart_id,
+            c.user_id,
+            c.num_items_in_cart,
+            c.cart_total,
+            c.shipping,
+            c.tax,
+            c.order_total,
+            -- Cột bảng CartItems (Đổi tên để tránh trùng lặp)
+            ci.cart_item_id,
+            ci.amount,
+            ci.cart_id    as ci_cart_id,
+            ci.product_id as ci_product_id,
+            -- Cột bảng Products
+            p.product_id  as p_product_id,
+            p.name        as product_name,
+            p.image       as product_image,
+            p.price       as product_price,
+            p.company     as product_company
+        FROM public.carts c
+                 LEFT JOIN public.cart_items ci ON c.cart_id = ci.cart_id
+                 LEFT JOIN public.products p ON ci.product_id = p.product_id
+        WHERE c.cart_id = #{cardId}
+        ORDER BY ci.created_at DESC
+    </select>
+
+    <select id="countItemsByUsername" resultType="int">
+        SELECT c.num_items_in_cart
+        FROM carts c
+        WHERE c.user_id = CAST(#{userId} AS UUID)
+    </select>
+
+    <!--
+      TẠO GIỎ HÀNG MỚI (PHIÊN BẢN TỐI ƯU):
+      - Chúng ta chỉ truyền userId.
+      - Các cột khác (cart_total, tax, shipping...) sẽ lấy giá trị DEFAULT từ Database.
+      - useGeneratedKeys="true" kết hợp với keyProperty="cart_id" giúp MyBatis
+        tự động nạp UUID vừa sinh ra vào object Cart trong Java.
+    -->
+    <insert id="createCart">
+        INSERT INTO carts (user_id)
+        VALUES (#{userId})
+    </insert>
+    <delete id="clearCart">
+        DELETE
+        FROM carts
+        WHERE cart_id = #{cardId}
+    </delete>
+
+</mapper>

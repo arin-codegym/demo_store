@@ -1,0 +1,68 @@
+'use client';
+
+import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+
+import { useChatUiStore } from '@/stores/chat-ui-store';
+import { AdminChatLauncher } from '@/components/chat/AdminChatLauncher';
+import { useCurrentUser } from '@/query/auth/useCurrentUser';
+import { ensureAdminConversation } from '@/lib/api/internal/conversations';
+
+export function GlobalAdminChat() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { data: user, isLoading } = useCurrentUser();
+
+  const [isBootstrapping, setIsBootstrapping] = useState(false);
+
+  const adminConversationId = useChatUiStore((s) => s.adminConversationId);
+  const setAdminConversationId = useChatUiStore(
+    (s) => s.setAdminConversationId,
+  );
+  const openConversationWidget = useChatUiStore(
+    (s) => s.openConversationWidget,
+  );
+
+  const isChatPage = pathname.startsWith('/chat');
+
+  // Ẩn launcher trên /chat
+  if (isChatPage) return null;
+
+  // Admin thì không cần nút "chat với admin"
+  if (user?.roles?.includes('ROLE_ADMIN')) return null;
+
+  const handleOpen = async () => {
+    if (isLoading || isBootstrapping) return;
+
+    if (!user) {
+      router.push('/login?redirect=' + encodeURIComponent(pathname));
+      return;
+    }
+
+    try {
+      setIsBootstrapping(true);
+
+      let id = adminConversationId;
+
+      if (id == null) {
+        id = await ensureAdminConversation();
+        if (id == null) return;
+
+        setAdminConversationId(id);
+      }
+
+      openConversationWidget(id, 'USER_ADMIN');
+    } catch (error) {
+      console.error('Failed to open admin conversation widget', error);
+    } finally {
+      setIsBootstrapping(false);
+    }
+  };
+
+  return (
+    <AdminChatLauncher
+      onClick={handleOpen}
+      disabled={isLoading || isBootstrapping}
+    />
+  );
+}

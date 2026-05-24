@@ -1,0 +1,15 @@
+ai:
+  classifier:
+    store-info-keywords:
+#      - gio mo cua
+      - hotline
+#      - dia chi
+#      - doi tra
+    order-status-keywords:
+      - don hang
+      - ma don
+      - trang thai don
+    product-info-keywords:
+      - con hang
+      - ton kho
+      - san pham

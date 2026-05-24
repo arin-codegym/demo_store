@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quochuy.ai.rag.mapper.RagDocumentMapper">
+
+    <resultMap id="RagDocumentResultMap" type="com.quochuy.ai.rag.model.RagDocument">
+        <id property="id" column="id"/>
+        <result property="documentCode" column="document_code"/>
+        <result property="title" column="title"/>
+        <result property="fileName" column="file_name"/>
+        <result property="fileExt" column="file_ext"/>
+        <result property="mimeType" column="mime_type"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="sourceType" column="source_type"/>
+        <result property="sourceUri" column="source_uri"/>
+        <result property="checksumSha256" column="checksum_sha256"/>
+        <result property="languageCode" column="language_code"/>
+        <result property="status" column="status"/>
+        <result property="metadataJson" column="metadata_json"/>
+        <result property="rawText" column="raw_text"/>
+        <result property="pageCount" column="page_count"/>
+        <result property="importedAt" column="imported_at"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedBy" column="updated_by"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deleted" column="deleted"/>
+        <result property="importJobId" column="import_job_id"/>
+        <result property="assistantCode" column="assistant_code"/>
+    </resultMap>
+
+    <insert id="insert"
+            parameterType="com.quochuy.ai.rag.model.RagDocument"
+            useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO rag_document (
+            document_code,
+            title,
+            file_name,
+            file_ext,
+            mime_type,
+            file_size,
+            source_type,
+            source_uri,
+            checksum_sha256,
+            language_code,
+            status,
+            metadata_json,
+            raw_text,
+            page_count,
+            imported_at,
+            created_by,
+            updated_by,
+            deleted,
+            import_job_id,
+            assistant_code
+        )
+        VALUES (
+                   #{documentCode},
+                   #{title},
+                   #{fileName},
+                   #{fileExt},
+                   #{mimeType},
+                   #{fileSize},
+                   #{sourceType},
+                   #{sourceUri},
+                   #{checksumSha256},
+                   #{languageCode},
+                   #{status},
+                   CAST(#{metadataJson} AS jsonb),
+                   #{rawText},
+                   #{pageCount},
+                   #{importedAt},
+                   #{createdBy},
+                   #{updatedBy},
+                   #{deleted},
+                   #{importJobId},
+                   #{assistantCode}
+               )
+    </insert>
+
+    <select id="findById" resultMap="RagDocumentResultMap">
+        SELECT *
+        FROM rag_document
+        WHERE id = #{id}
+          AND deleted = false
+    </select>
+
+    <update id="updateImportSuccess">
+        UPDATE rag_document
+        SET status = #{status},
+            raw_text = #{rawText},
+            page_count = #{pageCount},
+            metadata_json = CAST(#{metadataJson} AS jsonb),
+            imported_at = CURRENT_TIMESTAMP,
+            updated_by = #{updatedBy},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE rag_document
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.notification.mapper.NotificationMapper">
+
+<!--    <resultMap id="NotificationResultMap" type="com.quochuy.store.websocket.domain.model.notification.Notification">-->
+<!--        <id property="id" column="id"/>-->
+<!--        <result property="recipientUserId" column="recipient_user_id"/>-->
+<!--        <result property="type" column="type"/>-->
+<!--        <result property="title" column="title"/>-->
+<!--        <result property="body" column="body"/>-->
+<!--        <result property="read" column="is_read"/>-->
+<!--        <result property="readAt" column="read_at"/>-->
+<!--        <result property="actorUserId" column="actor_user_id"/>-->
+<!--        <result property="targetType" column="target_type"/>-->
+<!--        <result property="targetId" column="target_id"/>-->
+<!--        <result property="targetUrl" column="target_url"/>-->
+<!--        <result property="imageUrl" column="image_url"/>-->
+<!--        <result property="metadataJson" column="metadata_json"/>-->
+<!--        <result property="createdAt" column="created_at"/>-->
+<!--    </resultMap>-->
+
+    <insert id="insert">
+        INSERT INTO notifications (
+            notification_id,
+            recipient_user_id,
+            type,
+            title,
+            body,
+            read,
+            read_at,
+            actor_user_id,
+            target_type,
+            target_id,
+            target_url,
+            image_url,
+            metadata_json,
+            created_at
+        ) VALUES (
+                     #{notificationId},
+                     #{recipientUserId},
+                     #{type},
+                     #{title},
+                     #{body},
+                     #{read},
+                     #{readAt},
+                     #{actorUserId},
+                     #{targetType},
+                     #{targetId},
+                     #{targetUrl},
+                     #{imageUrl},
+                     #{metadataJson}::jsonb,
+                     #{createdAt}
+                 )
+    </insert>
+
+    <select id="findNotifications" >
+        SELECT
+        notification_id,
+        recipient_user_id,
+        type,
+        title,
+        body,
+        read,
+        read_at,
+        actor_user_id,
+        target_type,
+        target_id,
+        target_url,
+        image_url,
+        metadata_json,
+        created_at
+        FROM notifications
+        WHERE recipient_user_id = #{recipientUserId}
+        <if test="unreadOnly != null and unreadOnly">
+            AND read = false
+        </if>
+        <if test="cursorCreatedAt != null and cursorId != null">
+            <![CDATA[
+            AND (
+            created_at < #{cursorCreatedAt}
+            OR (created_at = #{cursorCreatedAt} AND notification_id < #{cursorId})
+            )
+            ]]>
+        </if>
+        ORDER BY created_at DESC, notification_id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countUnread" resultType="long">
+        SELECT COUNT(*)
+        FROM notifications
+        WHERE recipient_user_id = #{recipientUserId}
+          AND read = false
+    </select>
+
+    <select id="findByIdAndRecipientUserId" >
+        SELECT
+            notification_id,
+            recipient_user_id,
+            type,
+            title,
+            body,
+            read,
+            read_at,
+            actor_user_id,
+            target_type,
+            target_id,
+            target_url,
+            image_url,
+            metadata_json,
+            created_at
+        FROM notifications
+        WHERE notification_id = #{notificationId}
+          AND recipient_user_id = #{recipientUserId}
+            LIMIT 1
+    </select>
+
+    <update id="markAsRead">
+        UPDATE notifications
+        SET
+            read = true,
+            read_at = #{readAt}
+        WHERE notification_id = #{notificationId}
+          AND recipient_user_id = #{recipientUserId}
+          AND read = false
+    </update>
+
+    <update id="markAllAsRead">
+        UPDATE notifications
+        SET
+            read = true,
+            read_at = #{readAt}
+        WHERE recipient_user_id = #{recipientUserId}
+          AND read = false
+    </update>
+
+    <update id="markReadByConversation">
+        UPDATE notifications
+        SET
+            read = true,
+            read_at = now()
+        WHERE target_id = #{conversationId}
+          AND read = false AND recipient_user_id = #{userId}
+
+    </update>
+
+</mapper>

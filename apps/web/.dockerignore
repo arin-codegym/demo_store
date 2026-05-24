@@ -1,0 +1,14 @@
+﻿node_modules
+.next
+.git
+.vscode
+README.md
+npm-debug.log
+Dockerfile
+docker-compose.yml
+# Local env/deploy secrets should never be sent into Docker build context.
+.env
+.env.*
+deploy/*.env
+deploy/*.ps1
+*.pem

@@ -1,0 +1,11 @@
+target
+.git
+.idea
+.vscode
+README.md
+
+# Local deploy secrets are for GitHub Actions sync only.
+# They should never be sent into Docker build context.
+deploy/*.env
+deploy/*.ps1
+*.pem
