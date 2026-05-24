@@ -5,7 +5,7 @@ spring:
   profiles:
     # Local runs use dev by default. Docker/prod should override with:
     # SPRING_PROFILES_ACTIVE=prod
-    default: local
+    default: dev
   config:
     # Shared AI classifier keywords.
     import: optional:classpath:application-questions.yml

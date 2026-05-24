@@ -1,5 +1,6 @@
-package com.quochuy.security;
+package com.quochuy.security.config;
 
+import com.quochuy.security.CustomUserDetails;
 import com.quochuy.security.filters.AuthStateFilter;
 import com.quochuy.security.services.CustomOidcUserService;
 import com.quochuy.security.services.OAuthUserService;
@@ -33,6 +34,7 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenResolv
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import reactor.util.annotation.NonNull;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Collection;
@@ -133,7 +135,7 @@ public class SecurityConfig {
 							.userInfoEndpoint(u -> u.oidcUserService(customOidcUserService))
 							.successHandler(oAuth2LoginSuccessHandler)
 							.failureHandler((req, res, ex) -> {
-								ex.printStackTrace();
+								log.warn("OAuth2 login failed", ex);
 								res.sendRedirect(frontendUrl + "/login?error=" + ex.getClass().getSimpleName());
 							})
 				)
@@ -201,7 +203,7 @@ public class SecurityConfig {
 	public Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
 		return new Converter<Jwt, AbstractAuthenticationToken>() {
 			@Override
-			public AbstractAuthenticationToken convert(Jwt jwt) {
+			public AbstractAuthenticationToken convert(@NonNull Jwt jwt) {
 				JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
 				authoritiesConverter.setAuthoritiesClaimName("roles");
 				authoritiesConverter.setAuthorityPrefix("");
@@ -223,9 +225,9 @@ public class SecurityConfig {
 				}
 				
 				CustomUserDetails userDetails = new CustomUserDetails(UUID.fromString(userId),
-															  userName,
-															  email, "",
-															  authorities,tokenVersion,null);
+																	  userName,
+																	  email, "",
+																	  authorities, tokenVersion, null);
 
 				return new UsernamePasswordAuthenticationToken(userDetails,
 													   null,
