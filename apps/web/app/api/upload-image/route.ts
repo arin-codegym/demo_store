@@ -1,7 +1,10 @@
 import { imageSchema, validateWithZodSchema } from '@/utils/schemas';
-import { deleteImage, uploadImage } from '@/utils/supabase';
+import { deleteImage, uploadImage } from '@/utils/s3';
 import { NextRequest, NextResponse } from 'next/server';
 import { ValidationError } from '@/utils/schemas';
+
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get('image') as File;

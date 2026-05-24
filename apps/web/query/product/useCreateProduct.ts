@@ -1,5 +1,4 @@
 import { fetchWithAuth } from '@/lib/fetchWithAuth.client';
-import { deleteImage } from '@/utils/supabase';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type CreateProduct = {

@@ -5,7 +5,7 @@ import {
   productSchemaBase,
   validateWithZodSchema,
 } from '@/utils/schemas';
-import { deleteImage, uploadImage } from '@/utils/supabase';
+import { deleteImage, uploadImage } from '@/utils/s3';
 import { Product } from '@/utils/types';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
