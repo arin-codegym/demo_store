@@ -5,7 +5,7 @@ export async function GET() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   // if (accessToken) return new NextResponse();
-  if (!accessToken) return new NextResponse();
+  if (!accessToken) return Response.json({}, { status: 401 });
   const res = await fetch(`${process.env.API_EXTERNAL}/auth/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,

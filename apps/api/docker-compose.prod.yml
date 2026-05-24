@@ -13,6 +13,7 @@
       API_EXTERNAL: http://backend:8080/api/backend
       # Public browser-facing backend URL. This value comes from /home/ubuntu/app/.env.
       NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
       # Supabase values used by frontend server-side utilities and public client config.
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_KEY: ${SUPABASE_KEY}

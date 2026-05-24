@@ -5,11 +5,12 @@ export const runtime = 'nodejs'; // tránh edge để xử lý set-cookie ổn �
 /* Đây là pattern hợp lệ: server-side refresh + redirect. */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const next = url.searchParams.get('next') || '/';
+  const next = getSafeRedirectPath(url.searchParams.get('next'));
+  const redirectBaseUrl = getRedirectBaseUrl(req);
   // ✅ forward ALL cookies (refreshToken + sid + ...)
   const cookieHeader = req.headers.get('cookie');
   if (!cookieHeader) {
-    const res = NextResponse.redirect(new URL('/', url));
+    const res = NextResponse.redirect(new URL('/', redirectBaseUrl));
     res.cookies.delete('accessToken');
     res.cookies.delete('refreshToken');
     res.cookies.delete('sid');
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   // const data = await refreshRes.json();
 
   if (!refreshRes.ok) {
-    const res = NextResponse.redirect(new URL('/', url));
+    const res = NextResponse.redirect(new URL('/', redirectBaseUrl));
 
     res.cookies.set('accessToken', '', {
       httpOnly: true,
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Trả về redirect về trang user muốn vào
-  const res = NextResponse.redirect(new URL(next, url));
+  const res = NextResponse.redirect(new URL(next, redirectBaseUrl));
 
   // Quan trọng: backend có thể trả NHIỀU Set-Cookie (access + refresh)
   // Node fetch (undici) thường có getSetCookie()
@@ -70,3 +71,26 @@ export async function GET(req: NextRequest) {
 
   return res;
 }
+
+const getRedirectBaseUrl = (req: NextRequest) => {
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL;
+  }
+
+  const forwardedHost = req.headers.get('x-forwarded-host');
+  const forwardedProto = req.headers.get('x-forwarded-proto') ?? 'https';
+
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  return req.nextUrl.origin;
+};
+
+const getSafeRedirectPath = (next: string | null) => {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) {
+    return '/';
+  }
+
+  return next;
+};
