@@ -2,12 +2,13 @@
 
 import { useMemo } from 'react';
 import { useConversations } from '@/query/chat/use-conversations';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import { useChatUiReduxSelector } from '@/stores/chat-ui-redux-store';
 import { useLogout } from '@/query/auth/use-logout';
 
 export function ChatHeader() {
-  const selectedConversationId = useChatUiStore(
-    (s) => s.selectedConversationId,
+  // Zustand: useChatUiStore((s) => s.selectedConversationId)
+  const selectedConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.selectedConversationId,
   );
   const { data: conversations = [] } = useConversations();
   const { logout } = useLogout();

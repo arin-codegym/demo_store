@@ -7,7 +7,10 @@ import { useMarkNotificationRead } from '@/query/notifications/useMarkNotificati
 import { useNotifications } from '@/query/notifications/useNotifications';
 import { useUnreadNotificationCount } from '@/query/notifications/useUnreadNotificationCount';
 import type { AppNotification } from '@/utils/types';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  useChatUiReduxDispatch,
+} from '@/stores/chat-ui-redux-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/query/query-keys';
 
@@ -22,16 +25,21 @@ export function NotificationDropdown({
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const setSelectedConversationId = useChatUiStore(
-    (s) => s.setSelectedConversationId,
-  );
-
-  const setAiConversationId = useChatUiStore((s) => s.setAiConversationId);
-  const setAiWidgetOpen = useChatUiStore((s) => s.setAiWidgetOpen);
-
-  const openConversationWidget = useChatUiStore(
-    (s) => s.openConversationWidget,
-  );
+  const dispatch = useChatUiReduxDispatch();
+  // Zustand: useChatUiStore((s) => s.setSelectedConversationId)
+  const setSelectedConversationId = (conversationId: string | null) =>
+    dispatch(chatUiActions.setSelectedConversationId(conversationId));
+  // Zustand: useChatUiStore((s) => s.setAiConversationId)
+  const setAiConversationId = (conversationId: string | null) =>
+    dispatch(chatUiActions.setAiConversationId(conversationId));
+  // Zustand: useChatUiStore((s) => s.setAiWidgetOpen)
+  const setAiWidgetOpen = (open: boolean) =>
+    dispatch(chatUiActions.setAiWidgetOpen(open));
+  // Zustand: useChatUiStore((s) => s.openConversationWidget)
+  const openConversationWidget = (
+    conversationId: string,
+    type: 'USER_ADMIN' | 'DIRECT' | 'USER_DIRECT',
+  ) => dispatch(chatUiActions.openConversationWidget({ conversationId, type }));
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useNotifications();

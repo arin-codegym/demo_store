@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useCreateDirectConversation } from '@/query/chat/use-create-direct-conversation';
 import { useChatableUsers } from '@/query/chat/use-chatable-users';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  useChatUiReduxDispatch,
+} from '@/stores/chat-ui-redux-store';
 
 type Props = {
   open: boolean;
@@ -18,10 +21,10 @@ export function NewChatModal({ open, onClose }: Props) {
     open,
   );
   const createDirectConversation = useCreateDirectConversation();
-  const setSelectedConversationId = useChatUiStore(
-    (s) => s.setSelectedConversationId,
-  );
-  console.log(users);
+  const dispatch = useChatUiReduxDispatch();
+  // Zustand: const setSelectedConversationId = useChatUiStore((s) => s.setSelectedConversationId)
+  const setSelectedConversationId = (conversationId: string | null) =>
+    dispatch(chatUiActions.setSelectedConversationId(conversationId));
   useEffect(() => {
     if (!open) {
       setKeyword('');

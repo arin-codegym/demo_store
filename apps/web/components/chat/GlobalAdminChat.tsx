@@ -3,7 +3,11 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  useChatUiReduxDispatch,
+  useChatUiReduxSelector,
+} from '@/stores/chat-ui-redux-store';
 import { AdminChatLauncher } from '@/components/chat/AdminChatLauncher';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
 import { ensureAdminConversation } from '@/lib/api/internal/conversations';
@@ -16,13 +20,19 @@ export function GlobalAdminChat() {
 
   const [isBootstrapping, setIsBootstrapping] = useState(false);
 
-  const adminConversationId = useChatUiStore((s) => s.adminConversationId);
-  const setAdminConversationId = useChatUiStore(
-    (s) => s.setAdminConversationId,
+  const dispatch = useChatUiReduxDispatch();
+  // Zustand: useChatUiStore((s) => s.adminConversationId)
+  const adminConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.adminConversationId,
   );
-  const openConversationWidget = useChatUiStore(
-    (s) => s.openConversationWidget,
-  );
+  // Zustand: useChatUiStore((s) => s.setAdminConversationId)
+  const setAdminConversationId = (conversationId: string | null) =>
+    dispatch(chatUiActions.setAdminConversationId(conversationId));
+  // Zustand: useChatUiStore((s) => s.openConversationWidget)
+  const openConversationWidget = (
+    conversationId: string,
+    type: 'USER_ADMIN',
+  ) => dispatch(chatUiActions.openConversationWidget({ conversationId, type }));
 
   const shouldHideChat = shouldHideGlobalChat(pathname);
 

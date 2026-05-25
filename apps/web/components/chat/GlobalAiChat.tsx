@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  useChatUiReduxDispatch,
+  useChatUiReduxSelector,
+} from '@/stores/chat-ui-redux-store';
 import { AiChatLauncher } from './AiChatLauncher';
 import { AiChatWidget } from './AiChatWidget';
 import { ensureAiConversation } from '@/lib/api/internal/conversations';
@@ -18,10 +22,21 @@ export function GlobalAiChat() {
 
   const [isBootstrapping, setIsBootstrapping] = useState(false);
 
-  const setAiConversationId = useChatUiStore((s) => s.setAiConversationId);
-  const setAiWidgetOpen = useChatUiStore((s) => s.setAiWidgetOpen);
-  const aiConversationId = useChatUiStore((s) => s.aiConversationId);
-  const aiWidgetOpen = useChatUiStore((s) => s.aiWidgetOpen);
+  const dispatch = useChatUiReduxDispatch();
+  // Zustand: useChatUiStore((s) => s.setAiConversationId)
+  const setAiConversationId = (conversationId: string | null) =>
+    dispatch(chatUiActions.setAiConversationId(conversationId));
+  // Zustand: useChatUiStore((s) => s.setAiWidgetOpen)
+  const setAiWidgetOpen = (open: boolean) =>
+    dispatch(chatUiActions.setAiWidgetOpen(open));
+  // Zustand: useChatUiStore((s) => s.aiConversationId)
+  const aiConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.aiConversationId,
+  );
+  // Zustand: useChatUiStore((s) => s.aiWidgetOpen)
+  const aiWidgetOpen = useChatUiReduxSelector(
+    (state) => state.chatUi.aiWidgetOpen,
+  );
   const { mutate: markReadByConversation } = useMarkReadByConversationId();
   const lastMarkedAiConversationRef = useRef<string | null>(null);
 

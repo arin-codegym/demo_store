@@ -27,7 +27,7 @@ import type {
   WsEnvelope,
 } from '@/utils/types';
 import { getMe } from '@/lib/api/get-me';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import { useChatUiReduxSelector } from '@/stores/chat-ui-redux-store';
 import {
   decreaseUnreadNotificationCount,
   increaseUnreadNotificationCount,
@@ -43,21 +43,38 @@ export function GlobalChatSocketListenerRefactor() {
   const queryClient = useQueryClient();
   const { data: me } = useCurrentUser();
 
-  const stompConnected = useChatUiStore((s) => s.stompConnected);
-  const selectedConversationId = useChatUiStore(
-    (s) => s.selectedConversationId,
+  // Zustand: useChatUiStore((s) => s.stompConnected)
+  const stompConnected = useChatUiReduxSelector(
+    (state) => state.chatUi.stompConnected,
   );
-  const adminConversationId = useChatUiStore((s) => s.adminConversationId);
-  const adminWidgetOpen = useChatUiStore((s) => s.adminWidgetOpen);
-
-  const aiConversationId = useChatUiStore((s) => s.aiConversationId);
-  const aiWidgetOpen = useChatUiStore((s) => s.aiWidgetOpen);
-  const conversationWidgetConversationId = useChatUiStore(
-    (s) => s.conversationWidgetConversationId,
+  // Zustand: useChatUiStore((s) => s.selectedConversationId)
+  const selectedConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.selectedConversationId,
+  );
+  // Zustand: useChatUiStore((s) => s.adminConversationId)
+  const adminConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.adminConversationId,
+  );
+  // Zustand: useChatUiStore((s) => s.adminWidgetOpen)
+  const adminWidgetOpen = useChatUiReduxSelector(
+    (state) => state.chatUi.adminWidgetOpen,
   );
 
-  const conversationWidgetOpen = useChatUiStore(
-    (s) => s.conversationWidgetOpen,
+  // Zustand: useChatUiStore((s) => s.aiConversationId)
+  const aiConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.aiConversationId,
+  );
+  // Zustand: useChatUiStore((s) => s.aiWidgetOpen)
+  const aiWidgetOpen = useChatUiReduxSelector(
+    (state) => state.chatUi.aiWidgetOpen,
+  );
+  // Zustand: useChatUiStore((s) => s.conversationWidgetConversationId)
+  const conversationWidgetConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.conversationWidgetConversationId,
+  );
+  // Zustand: useChatUiStore((s) => s.conversationWidgetOpen)
+  const conversationWidgetOpen = useChatUiReduxSelector(
+    (state) => state.chatUi.conversationWidgetOpen,
   );
   // Only one conversation context can be considered active for read/unread
   // decisions, whether it is the full chat page or one of the floating widgets.

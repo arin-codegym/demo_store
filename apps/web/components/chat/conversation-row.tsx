@@ -1,7 +1,11 @@
 'use client';
 
 import { useMarkReadByConversationId } from '@/query/notifications/useMarkReadByConversation';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  useChatUiReduxDispatch,
+  useChatUiReduxSelector,
+} from '@/stores/chat-ui-redux-store';
 import type { ConversationSummary } from '@/utils/types';
 import { useEffect, useRef } from 'react';
 
@@ -19,12 +23,14 @@ function formatTime(value?: string | null) {
 }
 
 export function ConversationRow({ conversation }: Props) {
-  const selectedConversationId = useChatUiStore(
-    (s) => s.selectedConversationId,
+  const dispatch = useChatUiReduxDispatch();
+  // Zustand: useChatUiStore((s) => s.selectedConversationId)
+  const selectedConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.selectedConversationId,
   );
-  const setSelectedConversationId = useChatUiStore(
-    (s) => s.setSelectedConversationId,
-  );
+  // Zustand: useChatUiStore((s) => s.setSelectedConversationId)
+  const setSelectedConversationId = (conversationId: string | null) =>
+    dispatch(chatUiActions.setSelectedConversationId(conversationId));
 
   const active = selectedConversationId === conversation.conversationId;
   const initial = conversation.otherUserName?.charAt(0)?.toUpperCase() ?? 'U';

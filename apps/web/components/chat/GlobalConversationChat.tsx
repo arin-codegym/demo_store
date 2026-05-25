@@ -2,7 +2,11 @@
 
 import { useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  useChatUiReduxDispatch,
+  useChatUiReduxSelector,
+} from '@/stores/chat-ui-redux-store';
 import { AdminChatWidget } from '@/components/chat/AdminChatWidget';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
 import { shouldHideGlobalChat } from './chat-route-visibility';
@@ -26,42 +30,24 @@ export function GlobalConversationChat() {
   const router = useRouter();
   const { data: user } = useCurrentUser();
 
-  const conversationWidgetOpen = useChatUiStore(
-    (s) => s.conversationWidgetOpen,
+  const dispatch = useChatUiReduxDispatch();
+  // Zustand: useChatUiStore((s) => s.conversationWidgetOpen)
+  const conversationWidgetOpen = useChatUiReduxSelector(
+    (state) => state.chatUi.conversationWidgetOpen,
   );
-  const conversationWidgetConversationId = useChatUiStore(
-    (s) => s.conversationWidgetConversationId,
+  // Zustand: useChatUiStore((s) => s.conversationWidgetConversationId)
+  const conversationWidgetConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.conversationWidgetConversationId,
   );
-  const conversationWidgetType = useChatUiStore(
-    (s) => s.conversationWidgetType,
+  // Zustand: useChatUiStore((s) => s.conversationWidgetType)
+  const conversationWidgetType = useChatUiReduxSelector(
+    (state) => state.chatUi.conversationWidgetType,
   );
-  const closeConversationWidget = useChatUiStore(
-    (s) => s.closeConversationWidget,
-  );
+  // Zustand: useChatUiStore((s) => s.closeConversationWidget)
+  const closeConversationWidget = () =>
+    dispatch(chatUiActions.closeConversationWidget());
 
   const lastMarkedKeyRef = useRef<string | null>(null);
-
-  // useEffect(() => {
-  //   if (
-  //     !conversationWidgetOpen ||
-  //     !conversationWidgetConversationId ||
-  //     !conversationWidgetType
-  //   ) {
-  //     return;
-  //   }
-
-  //   const markKey = `${conversationWidgetConversationId}:${conversationWidgetType}`;
-  //   if (lastMarkedKeyRef.current === markKey) return;
-
-  //   lastMarkedKeyRef.current = markKey;
-
-  //   markReadByConversation(conversationWidgetConversationId);
-  // }, [
-  //   conversationWidgetOpen,
-  //   conversationWidgetConversationId,
-  //   conversationWidgetType,
-  //   markReadByConversation,
-  // ]);
 
   if (shouldHideGlobalChat(pathname)) return null;
 

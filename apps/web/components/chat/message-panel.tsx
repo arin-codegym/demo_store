@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import { useChatUiReduxSelector } from '@/stores/chat-ui-redux-store';
 import { useConversations } from '@/query/chat/use-conversations';
 import { MessageList } from './message-list';
 import { MessageComposer } from '@/components/chat/message-composer';
@@ -13,8 +13,9 @@ import { useInfiniteMessages } from '../../query/chat/use-infinite-messages';
 
 export function MessagePanel() {
   const { data: me } = useCurrentUser();
-  const selectedConversationId = useChatUiStore(
-    (s) => s.selectedConversationId,
+  // Zustand: useChatUiStore((s) => s.selectedConversationId)
+  const selectedConversationId = useChatUiReduxSelector(
+    (state) => state.chatUi.selectedConversationId,
   );
 
   const { data: conversations = [] } = useConversations();

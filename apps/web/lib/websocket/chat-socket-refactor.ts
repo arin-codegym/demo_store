@@ -1,6 +1,9 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { useChatUiStore } from '@/stores/chat-ui-store';
+import {
+  chatUiActions,
+  chatUiReduxStore,
+} from '@/stores/chat-ui-redux-store';
 
 export type MessageHandler = (message: IMessage) => void;
 
@@ -16,14 +19,13 @@ function getWsBaseUrl() {
   return API_BASE.replace(/\/api\/backend$/, '');
 }
 
-function getStore() {
-  return useChatUiStore.getState();
-}
-
 function setConnectedState(connected: boolean) {
-  const store = getStore();
-  store.setSocketStatus(connected ? 'connected' : 'disconnected');
-  store.setStompConnected(connected);
+  // Zustand: useChatUiStore.getState().setSocketStatus(...)
+  chatUiReduxStore.dispatch(
+    chatUiActions.setSocketStatus(connected ? 'connected' : 'disconnected'),
+  );
+  // Zustand: useChatUiStore.getState().setStompConnected(...)
+  chatUiReduxStore.dispatch(chatUiActions.setStompConnected(connected));
 }
 
 function log(...args: unknown[]) {
@@ -38,8 +40,8 @@ export function connectStomp() {
 
   // Keep one STOMP client per browser tab; subscriptions are swapped as the
   // active conversation changes.
-  const store = getStore();
-  store.setSocketStatus('connecting');
+  // Zustand: useChatUiStore.getState().setSocketStatus('connecting')
+  chatUiReduxStore.dispatch(chatUiActions.setSocketStatus('connecting'));
 
   const client = new Client({
     webSocketFactory: () => new SockJS(`${getWsBaseUrl()}/ws`),
