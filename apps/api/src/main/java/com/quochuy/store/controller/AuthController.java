@@ -5,6 +5,7 @@ import com.quochuy.security.session.AuthSessionService;
 import com.quochuy.security.session.RefreshTokenHasher;
 import com.quochuy.security.session.TokenFactory;
 import com.quochuy.store.dto.request.LoginRequest;
+import com.quochuy.store.dto.request.RegisterRequest;
 import com.quochuy.common.exception.enums.AuthErrorCode;
 import com.quochuy.common.exception.AppException;
 import com.quochuy.store.mapper.AuthSessionMapper;
@@ -16,9 +17,11 @@ import com.quochuy.redis.service.AuthStateCache;
 import com.quochuy.redis.service.UserAuthStateService;
 import com.quochuy.security.CustomUserDetails;
 import com.quochuy.store.service.impl.UserServiceImpl;
+import com.quochuy.store.service.RegistrationService;
 import com.quochuy.utils.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
@@ -54,6 +57,20 @@ public class AuthController {
 	private final RefreshTokenHasher refreshTokenHasher;
 	private final TokenFactory tokenFactory;
 	private final AuthStateCache cache;
+	private final RegistrationService registrationService;
+
+	@PostMapping("/register")
+	public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+		registrationService.register(request);
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(Map.of("message", "Registration successful. Please check your email to activate your account."));
+	}
+
+	@GetMapping("/activate")
+	public ResponseEntity<?> activate(@RequestParam String token) {
+		registrationService.activate(token);
+		return ResponseEntity.ok(Map.of("message", "Account activated successfully. You can now log in."));
+	}
 	
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest,
@@ -79,6 +96,10 @@ public class AuthController {
 			}
 			if(userDetails.getStatus() == UserStatus.DELETED){
 				throw new AppException(AuthErrorCode.USER_DELETED);
+			}
+			User loginUser = userServiceImpl.findByUsername(userDetails.getUsername());
+			if (loginUser != null && !loginUser.isEmailVerified()) {
+				throw new AppException(AuthErrorCode.EMAIL_NOT_VERIFIED);
 			}
 			/**authRequest.getPrincipal()  → CustomUserDetails
 			 authRequest.getAuthorities() → ROLE_USER, ROLE_ADMIN

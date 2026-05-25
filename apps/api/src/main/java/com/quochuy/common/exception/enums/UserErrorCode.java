@@ -21,6 +21,11 @@ public enum UserErrorCode implements BaseErrorCode {
 			"USER_003",
 			HttpStatus.CONFLICT,
 			"user.email_already_exists"
+	),
+	ACTIVATION_TOKEN_INVALID(
+			"USER_004",
+			HttpStatus.BAD_REQUEST,
+			"user.activation_token_invalid"
 	);
 	
 	private final String code;

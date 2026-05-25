@@ -24,6 +24,7 @@ public interface UserMapper {
 	
 	User findByEmail(@Param("email") String email);
 	boolean existsByUsername(@Param("username") String username);
+	boolean existsByEmail(@Param("email") String email);
 	
 	void insertUser(User user);
 	
@@ -38,6 +39,8 @@ public interface UserMapper {
 	AuthState banUserReturning(UUID userId,UserStatus status);
 	
 	int createUser(User user);
+	int createRegisteredUser(User user);
+	int markEmailVerified(@Param("userId") UUID userId);
 	
 	UUID getAdminId();
 }

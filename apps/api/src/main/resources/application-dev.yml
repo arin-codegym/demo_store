@@ -82,6 +82,9 @@ app:
     issuer: ${JWT_ISSUER:quochuy-store}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    from: ${APP_MAIL_FROM:no-reply@localhost}
 
 stripe:
   secret:

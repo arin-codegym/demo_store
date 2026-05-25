@@ -87,7 +87,9 @@ function LoginPage() {
             Enter your username below to login to your account
           </CardDescription>
           <CardAction>
-            <Button variant='link'>Sign Up</Button>
+            <Button asChild variant='link'>
+              <Link href='/register'>Sign Up</Link>
+            </Button>
           </CardAction>
         </CardHeader>
         <CardContent>
