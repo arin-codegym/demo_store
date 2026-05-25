@@ -7,6 +7,7 @@ import { useChatUiStore } from '@/stores/chat-ui-store';
 import { AdminChatLauncher } from '@/components/chat/AdminChatLauncher';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
 import { ensureAdminConversation } from '@/lib/api/internal/conversations';
+import { shouldHideGlobalChat } from './chat-route-visibility';
 
 export function GlobalAdminChat() {
   const pathname = usePathname();
@@ -23,10 +24,9 @@ export function GlobalAdminChat() {
     (s) => s.openConversationWidget,
   );
 
-  const isChatPage = pathname.startsWith('/chat');
+  const shouldHideChat = shouldHideGlobalChat(pathname);
 
-  // Ẩn launcher trên /chat
-  if (isChatPage) return null;
+  if (shouldHideChat) return null;
 
   // Admin thì không cần nút "chat với admin"
   if (user?.roles?.includes('ROLE_ADMIN')) return null;

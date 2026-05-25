@@ -9,6 +9,7 @@ import { AiChatWidget } from './AiChatWidget';
 import { ensureAiConversation } from '@/lib/api/internal/conversations';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
 import { useMarkReadByConversationId } from '@/query/notifications/useMarkReadByConversation';
+import { shouldHideGlobalChat } from './chat-route-visibility';
 
 export function GlobalAiChat() {
   const pathname = usePathname();
@@ -23,8 +24,6 @@ export function GlobalAiChat() {
   const aiWidgetOpen = useChatUiStore((s) => s.aiWidgetOpen);
   const { mutate: markReadByConversation } = useMarkReadByConversationId();
   const lastMarkedAiConversationRef = useRef<string | null>(null);
-  const isChatPage = pathname.startsWith('/chat');
-  if (isChatPage) return null;
 
   const handleOpen = async () => {
     if (isLoading || isBootstrapping) return;
@@ -60,6 +59,8 @@ export function GlobalAiChat() {
 
     markReadByConversation(aiConversationId);
   }, [aiWidgetOpen, aiConversationId, markReadByConversation]);
+
+  if (shouldHideGlobalChat(pathname)) return null;
 
   const handleClose = () => {
     setAiWidgetOpen(false);

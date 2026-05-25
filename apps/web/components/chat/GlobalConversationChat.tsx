@@ -6,6 +6,7 @@ import { useChatUiStore } from '@/stores/chat-ui-store';
 import { AdminChatWidget } from '@/components/chat/AdminChatWidget';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
 import { useMarkReadByConversationId } from '@/query/notifications/useMarkReadByConversation';
+import { shouldHideGlobalChat } from './chat-route-visibility';
 
 function mapConversationTypeToQueryType(
   type: 'USER_ADMIN' | 'DIRECT' | 'USER_DIRECT' | null,
@@ -71,8 +72,7 @@ export function GlobalConversationChat() {
     );
     console.log('conversationWidgetType =', conversationWidgetType);
   });
-  const isChatPage = pathname.startsWith('/chat');
-  if (isChatPage) return null;
+  if (shouldHideGlobalChat(pathname)) return null;
 
   if (!conversationWidgetOpen || !conversationWidgetConversationId) {
     return null;

@@ -10,10 +10,12 @@ import {
 } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import { Bell } from 'lucide-react';
+import { useCurrentUser } from '@/query/auth/useCurrentUser';
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const { data } = useUnreadNotificationCount();
+  const { data: currentUser } = useCurrentUser();
+  const { data } = useUnreadNotificationCount(Boolean(currentUser));
 
   const unreadCount = data?.unreadCount ?? 0;
 

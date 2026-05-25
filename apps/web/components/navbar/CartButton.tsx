@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { LuShoppingCart } from 'react-icons/lu'; // Hook lấy thông tin user từ UserProvider
 
 import { useCartCount } from '@/query/cart/useCartCount';
+import { useCurrentUser } from '@/query/auth/useCurrentUser';
 
 function CartButton() {
-  const { data, isLoading } = useCartCount();
+  const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
+  const { data, isLoading } = useCartCount(Boolean(currentUser));
   const count = typeof data === 'number' ? data : 0;
   // const [isDataLoading, setIsDataLoading] = useState(true); // Trạng thái lấy data từ DB
 
@@ -46,7 +48,7 @@ function CartButton() {
   // Logic hiển thị an toàn
   // const displayCount = !user ? 0 : numItemsInCart;
   // Nếu dữ liệu chưa về, hãy chủ động render ra Skeleton ở đây
-  if (isLoading) {
+  if (isUserLoading || isLoading) {
     return <div className='w-10 h-10 bg-gray-100 animate-pulse rounded-md' />;
   }
 

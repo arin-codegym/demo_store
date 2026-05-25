@@ -1,54 +1,49 @@
 'use client';
+
+import { useState } from 'react';
 import { LuUser } from 'react-icons/lu';
-import Image from 'next/image';
+
 import { useUser } from '../context/UserProvider';
-import { useAuthStore } from '@/lib/store/authStore';
-import { useEffect, useState } from 'react';
+
+function isUsableAvatarSrc(src: string) {
+  return (
+    src.startsWith('/') ||
+    src.startsWith('http://') ||
+    src.startsWith('https://') ||
+    src.startsWith('data:image/') ||
+    src.startsWith('blob:')
+  );
+}
 
 function UserIcon() {
-  // const user = useAuthStore((state) => state.user);
   const user = useUser();
-  // Trạng thái kiểm tra xem component đã được nạp ở Client chưa
-  // const [mounted, setMounted] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const profileImage = user?.avatarUrl?.trim();
-  const src = !failed && profileImage ? profileImage : '/default-avatar.png';
-  // useEffect(() => {
-  //   // Đánh dấu đã mounted để tránh lỗi Hydration Mismatch
-  //   setMounted(true);
-  // }, []);
-  // Giả sử Spring Boot trả về trường 'avatar' hoặc 'imageUrl'
-  // const profileImage = user?.avatarUrl;
-  // if (profileImage)
-  return profileImage || failed ? (
-    // <Image
-    //   src={profileImage}
-    //   alt={user?.fullName || 'User profile'}
-    //   width={24}
-    //   height={24}
-    //   className='rounded-full object-cover h-6 w-6'
-    // />
-    <img
-      src={src}
-      alt={user?.fullName || 'User profile'}
-      width={24}
-      height={24}
-      className='rounded-full object-cover h-6 w-6'
-      onError={
-        (e) => setFailed(true)
-        //   {
-        //   // (e.currentTarget as HTMLImageElement).src = '/default-avatar.png';
-        //   // const img = e.currentTarget;
-        //   // // chặn loop: chỉ fallback 1 lần
-        //   // img.onerror = null;
-        //   // img.src = '/default-avatar.png';
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const profileImage = user?.avatarUrl?.trim() ?? '';
 
-        // }
-      }
-    />
-  ) : (
-    <LuUser className='w-6 h-6 bg-primary rounded-full text-white' />
+  const shouldShowAvatar =
+    profileImage &&
+    isUsableAvatarSrc(profileImage) &&
+    failedSrc !== profileImage;
+
+  if (shouldShowAvatar) {
+    return (
+      <img
+        src={profileImage}
+        alt={user?.fullName || user?.username || 'User profile'}
+        width={24}
+        height={24}
+        referrerPolicy='no-referrer'
+        className='h-6 w-6 rounded-full object-cover'
+        onError={() => setFailedSrc(profileImage)}
+      />
+    );
+  }
+
+  return (
+    <span className='flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white'>
+      <LuUser className='h-4 w-4' />
+    </span>
   );
-  // return <LuUser className='w-6 h-6 bg-primary rounded-full text-white' />;
 }
+
 export default UserIcon;

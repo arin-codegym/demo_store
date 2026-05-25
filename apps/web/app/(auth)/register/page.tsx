@@ -23,13 +23,15 @@ type RegisterPayload = {
   password: string;
 };
 
+const initialValues: RegisterPayload = {
+  userName: '',
+  fullName: '',
+  email: '',
+  password: '',
+};
+
 export default function RegisterPage() {
-  const [values, setValues] = useState<RegisterPayload>({
-    userName: '',
-    fullName: '',
-    email: '',
-    password: '',
-  });
+  const [values, setValues] = useState<RegisterPayload>(initialValues);
   const [isPending, setIsPending] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
 
@@ -59,6 +61,7 @@ export default function RegisterPage() {
       }
 
       setSubmittedEmail(values.email);
+      setValues(initialValues);
       toast({ description: data?.message || 'Registration successful' });
     } catch (error) {
       toast({
@@ -73,17 +76,17 @@ export default function RegisterPage() {
 
   if (submittedEmail) {
     return (
-      <Card className='w-full max-w-sm'>
-        <CardHeader>
-          <CardTitle>Check your email</CardTitle>
-          <CardDescription>
+      <Card className='w-full max-w-md border-slate-200 shadow-sm'>
+        <CardHeader className='space-y-2 text-center'>
+          <CardTitle className='text-2xl'>Check your email</CardTitle>
+          <CardDescription className='text-base'>
             We sent an activation link to {submittedEmail}.
           </CardDescription>
         </CardHeader>
-        <CardContent className='text-sm text-muted-foreground'>
+        <CardContent className='text-center text-sm text-muted-foreground'>
           Open the email and activate your account before logging in.
         </CardContent>
-        <CardFooter>
+        <CardFooter className='pt-2'>
           <Button asChild className='w-full'>
             <Link href='/login'>Back to login</Link>
           </Button>
@@ -93,20 +96,22 @@ export default function RegisterPage() {
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <Card className='w-full max-w-sm'>
-        <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>
+    <form onSubmit={onSubmit} className='w-full max-w-md'>
+      <Card className='border-slate-200 shadow-sm'>
+        <CardHeader className='space-y-2 text-center'>
+          <CardTitle className='text-2xl'>Create an account</CardTitle>
+          <CardDescription className='text-base'>
             Register a user account and activate it by email.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='flex flex-col gap-4'>
+          <div className='flex flex-col gap-5'>
             <div className='grid gap-2'>
               <Label htmlFor='fullName'>Full name</Label>
               <Input
                 id='fullName'
+                name='fullName'
+                placeholder='Enter your full name'
                 value={values.fullName}
                 onChange={updateField('fullName')}
                 disabled={isPending}
@@ -117,6 +122,8 @@ export default function RegisterPage() {
               <Label htmlFor='userName'>Username</Label>
               <Input
                 id='userName'
+                name='userName'
+                placeholder='Choose a username'
                 value={values.userName}
                 onChange={updateField('userName')}
                 disabled={isPending}
@@ -128,7 +135,9 @@ export default function RegisterPage() {
               <Label htmlFor='email'>Email</Label>
               <Input
                 id='email'
+                name='email'
                 type='email'
+                placeholder='you@example.com'
                 value={values.email}
                 onChange={updateField('email')}
                 disabled={isPending}
@@ -139,7 +148,9 @@ export default function RegisterPage() {
               <Label htmlFor='password'>Password</Label>
               <Input
                 id='password'
+                name='password'
                 type='password'
+                placeholder='Create a password'
                 value={values.password}
                 onChange={updateField('password')}
                 disabled={isPending}
@@ -149,7 +160,7 @@ export default function RegisterPage() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className='flex-col gap-2'>
+        <CardFooter className='flex-col gap-3'>
           <Button type='submit' className='w-full' disabled={isPending}>
             {isPending ? (
               <>
@@ -160,7 +171,7 @@ export default function RegisterPage() {
               'Create account'
             )}
           </Button>
-          <Button asChild variant='link' className='w-full'>
+          <Button asChild variant='link' className='h-auto w-full py-1'>
             <Link href='/login'>Already have an account?</Link>
           </Button>
         </CardFooter>
