@@ -21,8 +21,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname:
-          'demo-store-product-images-prod-11111989.s3.ap-southeast-2.amazonaws.com',
+        hostname: 'd3vzq0a0zf11gd.cloudfront.net',
       },
       {
         protocol: 'https',
