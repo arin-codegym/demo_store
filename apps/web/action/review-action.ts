@@ -16,8 +16,6 @@ export const findExistingReview = async (productId: string) => {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-      // nếu cần:
-      //   cookieHeader: cookies().toString(),
     });
     if (!response.ok) return null;
     return response;
@@ -38,12 +36,10 @@ export const fetchProductRating = async (
     const res = await fetch(
       `${process.env.API_EXTERNAL}/review/fetchProductRating/${productId}`,
     );
-    // Kiểm tra nếu response không ok (ví dụ 404, 500)
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       console.error('Server Error:', errorData);
       throw new Error(errorData);
-      // return { rating: 0, count: 0 };
     }
 
     const data = await res.json();
@@ -53,7 +49,6 @@ export const fetchProductRating = async (
     };
   } catch (err) {
     console.log(err);
-    // Trả về object mặc định, đảm bảo hàm LUÔN trả về ProductRating
     return { rating: 0, count: 0 };
   }
 };
@@ -65,10 +60,7 @@ export const fetchProductReviews = async (
     const res = await fetch(
       `${process.env.API_EXTERNAL}/review/fetchProductReviews/${productId}`,
     );
-    // Kiểm tra nếu response không ok (ví dụ 404, 500)
     if (!res.ok) {
-      // throw new Error();
-      // Thay vì throw Error trống rỗng, hãy thử đọc message từ server nếu có
       const errorData = await res.json().catch(() => ({}));
       console.error('Server Error:', errorData);
 
@@ -85,24 +77,6 @@ export const fetchProductReviews = async (
 export const fetchProductReviewsByUser = async () => {
   const cookie = (await cookies()) || '';
   const accessToken = cookie.get('accessToken')?.value || '';
-  // const user = await getAuthUser();
-  // const reviews = await db.review.findMany({
-  //   where: {
-  //     clerkId: user.id,
-  //   },
-  //   select: {
-  //     id: true,
-  //     rating: true,
-  //     comment: true,
-  //     product: {
-  //       select: {
-  //         image: true,
-  //         name: true,
-  //       },
-  //     },
-  //   },
-  // });
-  // return reviews;
   try {
     const { response, setCookie } = await fetchWithAuthServer(
       `${process.env.API_EXTERNAL}/review/fetchProductReviewsByUser`,
@@ -112,7 +86,6 @@ export const fetchProductReviewsByUser = async () => {
         },
       },
     );
-    // Kiểm tra nếu response không ok (ví dụ 404, 500)
     if (!response.ok) throw new Error();
     const data = await response.json();
     return data;
@@ -124,7 +97,6 @@ export const fetchProductReviewsByUser = async () => {
 
 export const deleteReviewAction = async (prevState: { reviewId: string }) => {
   const { reviewId } = prevState;
-  // const user = await getAuthUser();
   const cookie = (await cookies()) || '';
   const accessToken = cookie.get('accessToken')?.value || '';
 
@@ -146,16 +118,14 @@ export const deleteReviewAction = async (prevState: { reviewId: string }) => {
 };
 
 export const createReviewAction = async (
-  // binData: any, cách dùng bind()
   prevState: any,
   formData: FormData,
 ) => {
-  // const user = await getAuthUser();
   const cookie = (await cookies()) || '';
   const accessToken = cookie.get('accessToken')?.value || '';
   try {
     const rawData = Object.fromEntries(formData);
-    // 2. Merge (gộp) bindData và formRawData lại làm một
+    // `prevState` carries client-supplied metadata from SubmitReview.
     const finalData = {
       ...prevState,
       ...rawData,

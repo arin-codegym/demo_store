@@ -50,46 +50,27 @@ export async function readBody(
   }
 }
 
-// /* Validation */
-// // 1. Định nghĩa một kiểu dữ liệu chung
 type FormResponse = {
   message: string;
-  errors?: Record<string, string[] | undefined>; // Ví dụ: { name: ['Quá ngắn'], price: ['Phải là số'] }
-  // errors?: {}; // Có dấu '?' để nhánh thành công không bắt buộc phải có
+  errors?: Record<string, string[] | undefined>;
 };
 
 export const renderError = (error: unknown): FormResponse => {
-  console.log(error);
-  // Nếu là lỗi từ Zod (nếu bạn quăng lỗi zod ở đâu đó) cách này làm đơn giản nếu không dùng custom class validator
-  // if (error instanceof Error && 'errors' in error) {
-  //   return {
-  //     message: 'Validation failed',
-  //     errors: (error as any).errors.map((e: any) => e.message),
-  //   };
-  // }
-
-  // return {
-  //   message: error instanceof Error ? error.message : 'an error occurred',
-  //   errors: {}, // Trả về object rỗng nếu không có lỗi field cụ thể
-  // };
-  // 1. Nếu là lỗi Validation do mình chủ động throw
+  // Zod validation errors carry field-level errors for form components.
   if (error instanceof ValidationError) {
     return {
       message: error.message,
-      errors: error.errors, // Kiểu dữ liệu đã khớp: Record<string, string[] | undefined>
-    };
-  }
-  // Xử lý các lỗi Error thông thường khác...
-  // return { message: 'An error occurred', errors: {} };
-  // 2. Nếu là lỗi Error thông thường (ví dụ: throw new Error("Database connection failed"))
-  if (error instanceof Error) {
-    return {
-      message: error.message,
-      errors: {}, // Trả về object rỗng để không gây lỗi ở FormInput
+      errors: error.errors,
     };
   }
 
-  // 3. Trường hợp fallback cuối cùng (lỗi không xác định)
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      errors: {},
+    };
+  }
+
   return {
     message: 'An unexpected error occurred',
     errors: {},

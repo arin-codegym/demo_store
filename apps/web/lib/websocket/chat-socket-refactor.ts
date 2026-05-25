@@ -36,6 +36,8 @@ export function connectStomp() {
     return stompClient;
   }
 
+  // Keep one STOMP client per browser tab; subscriptions are swapped as the
+  // active conversation changes.
   const store = getStore();
   store.setSocketStatus('connecting');
 
@@ -137,6 +139,8 @@ export function syncSubscriptions({
   onMessage,
 }: SyncSubscriptionsParams) {
   if (!stompConnected) {
+    // Dropping all subscriptions avoids receiving user-scoped frames after
+    // logout or reconnect transitions.
     unsubscribeSidebar();
     unsubscribeConversation();
     unsubscribeNotifications();

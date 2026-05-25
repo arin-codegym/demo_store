@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-// Tuỳ bạn định nghĩa Order type ở đâu
-import { fetchJsonWithAuth, fetchWithAuth } from '@/lib/fetchWithAuth.client';
+import { fetchJsonWithAuth } from '@/lib/fetchWithAuth.client';
 import { Order } from '@/utils/types';
 
 export function useAdminOrders() {
@@ -9,8 +8,8 @@ export function useAdminOrders() {
     queryKey: ['adminOrders'],
     queryFn: async () => {
       const data = await fetchJsonWithAuth<Order[]>('/api/admin/orders');
-      return data ?? []; // ✅ không bao giờ null
+      return data ?? [];
     },
-    retry: false, // tránh retry spam khi 401/403
+    retry: false,
   });
 }

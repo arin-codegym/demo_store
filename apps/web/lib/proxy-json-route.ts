@@ -18,6 +18,8 @@ export async function proxyJson({
   try {
     const cookieHeader = req.headers.get('cookie');
 
+    // Centralize backend proxying so every route gets the same refresh/retry
+    // behavior and cookie forwarding.
     const { response, setCookie } = await fetchWithAuthServer(
       `${process.env.API_EXTERNAL}${endpoint}`,
       {
@@ -50,6 +52,7 @@ export async function proxyJson({
       }
     }
 
+    // Forward refreshed cookies from Spring back through the Next route handler.
     for (const cookie of setCookie) {
       res.headers.append('set-cookie', cookie);
     }

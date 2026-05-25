@@ -10,14 +10,9 @@ import {
 } from '@/components/ui/table';
 import { useAdminOrders } from '@/query/orders/useAdminOrders';
 
-// import { fetchAdminOrders } from '@/utils/actions';
 import { formatCurrency, formatDate } from '@/utils/format';
+
 export function SalesPage() {
-  /* Khi nào dùng server component fetch như tutorial?
-Khi bạn muốn SSR/SEO hoặc giảm waterfall.
-Nhưng admin dashboard thường không cần SEO → React Query ổn. 
-*/
-  // const orders = await fetchAdminOrders();
   const { data: orders = [], isLoading, error } = useAdminOrders();
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>{(error as Error).message}</div>;

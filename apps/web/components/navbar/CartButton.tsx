@@ -1,7 +1,7 @@
 'use client';
 import { Button } from '../ui/button';
 import Link from 'next/link';
-import { LuShoppingCart } from 'react-icons/lu'; // Hook lấy thông tin user từ UserProvider
+import { LuShoppingCart } from 'react-icons/lu';
 
 import { useCartCount } from '@/query/cart/useCartCount';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
@@ -10,44 +10,7 @@ function CartButton() {
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
   const { data, isLoading } = useCartCount(Boolean(currentUser));
   const count = typeof data === 'number' ? data : 0;
-  // const [isDataLoading, setIsDataLoading] = useState(true); // Trạng thái lấy data từ DB
 
-  // useEffect(() => {
-  //   const load = async () => {
-  //     let res = await fetch('/api/cart/count', { credentials: 'include' });
-
-  //     if (res.status === 401) {
-  //       await fetch('/api/auth/refresh', {
-  //         method: 'POST',
-  //         credentials: 'include',
-  //       });
-  //       res = await fetch('/api/cart/count', { credentials: 'include' });
-  //     }
-
-  //     const data = await res.json();
-  //     setCount(data.count);
-  //   };
-
-  //   // chạy khi mount
-  //   load();
-  //   // chạy khi quay lại tab
-  //   window.addEventListener('focus', load);
-
-  //   // chạy khi tab bị ẩn/hiện lại
-  //   document.addEventListener('visibilitychange', () => {
-  //     if (!document.hidden) load();
-  //   });
-  //   return () => {
-  //     window.removeEventListener('focus', load);
-  //     document.removeEventListener('visibilitychange', load);
-  //   };
-  // }, []); // ⭐ chỉ chạy khi user thay đổizy thay đổi
-
-  // Logic Senior: Nếu Clerk đã load xong mà không có user,
-  // thì con số hiển thị BẮT BUỘC phải là 0, bất kể state đang là bao nhiêu.
-  // Logic hiển thị an toàn
-  // const displayCount = !user ? 0 : numItemsInCart;
-  // Nếu dữ liệu chưa về, hãy chủ động render ra Skeleton ở đây
   if (isUserLoading || isLoading) {
     return <div className='w-10 h-10 bg-gray-100 animate-pulse rounded-md' />;
   }

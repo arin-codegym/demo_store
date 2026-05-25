@@ -1,11 +1,13 @@
 import { cookies } from 'next/headers';
-import { fetchWithAuth } from '../fetchWithAuth.client';
 
 export async function fetchOrdersServer() {
   try {
     const cookieStore = await cookies();
     const cookieHeader = cookieStore.toString();
-    const res = await fetchWithAuth(
+
+    // This runs during server prefetch, so use native fetch and forward the
+    // browser cookies explicitly instead of importing the client fetch wrapper.
+    const res = await fetch(
       `${process.env.API_EXTERNAL}/orders/is-paid`,
       {
         method: 'GET',
@@ -24,14 +26,9 @@ export async function fetchOrdersServer() {
     }
 
     const json = await res.json();
-    return json.orders ?? []; // orders là key object nếu back-end trả về array mà không phải object
-    // const text = await res.text();
-    // console.log('RAW RESPONSE:', text);
-
-    // const data = JSON.parse(text);
-    // return data;
+    return json.orders ?? [];
   } catch (err) {
-    console.error('fetchCartDetails error:', err);
+    console.error('fetchOrdersServer error:', err);
     return null;
   }
 }

@@ -23,32 +23,16 @@ export function useUpdateCartItem() {
       return data;
     },
 
-    // 🟢 optimistic update
     onMutate: async ({ cartItemId, amount }) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
 
       const previousCart = queryClient.getQueryData<any>(['cart']);
-      // const previousCart = queryClient.getQueryData(['cart']);
       queryClient.setQueryData(['cart'], (old: any) => {
-        //   if (!old) return old;
+        if (!old) return old;
 
-        //   const item = old.cartDetails.cartItems.find(
-        //     (i: any) => i.cartItemId === cartItemId,
-        //   );
-
-        //   if (item) {
-        //     item.amount = amount; //❌ Sai (mutate trực tiếp)
-        //   }
-
-        //   old.cartDetails.numItemsInCart = old.cartDetails.cartItems.reduce(
-        //     (sum: number, i: any) => sum + i.amount,
-        //     0,
-        //   );
-
-        //   return { ...old };
         const updatedCartItems = old.cartDetails.cartItems.map((item: any) =>
           item.cartItemId === cartItemId
-            ? { ...item, amount } // ✅ tạo object mới
+            ? { ...item, amount }
             : item,
         );
         const updatedNumItems = updatedCartItems.reduce(
@@ -76,7 +60,6 @@ export function useUpdateCartItem() {
 
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      // queryClient.setQueryData(['cart'], data);
     },
   });
 }

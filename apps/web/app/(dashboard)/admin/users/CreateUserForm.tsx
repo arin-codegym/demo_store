@@ -47,7 +47,6 @@ const schema = z.object({
   status: z.enum(EDITABLE_STATUS),
   roles: z.array(z.string()).min(1, 'Chọn ít nhất 1 role'),
 });
-// schema dành cho payload API (transform ở đây)
 const apiSchema = schema.extend({
   email: z
     .string()
@@ -56,7 +55,7 @@ const apiSchema = schema.extend({
 });
 
 type FormValues = z.infer<typeof schema>;
-export type ApiPayload = z.output<typeof apiSchema>; // email: string | null
+export type ApiPayload = z.output<typeof apiSchema>;
 
 export function CreateUserForm({ onCreated }: { onCreated?: () => void }) {
   const createUserMutation = useCreateUser();
@@ -98,7 +97,7 @@ export function CreateUserForm({ onCreated }: { onCreated?: () => void }) {
         fullName: '',
         email: '',
       });
-      onCreated?.(); // ✅ đóng modal
+      onCreated?.();
     } catch (e: any) {
       toast({
         title: 'Create failed',

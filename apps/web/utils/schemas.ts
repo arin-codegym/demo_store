@@ -1,7 +1,7 @@
 import { z, ZodSchema } from 'zod';
 
 export const imageSchema = z.object({
-  image: validateImageFile(), //tách thành fuction không thích thì dung arrow func
+  image: validateImageFile(),
 });
 
 function validateImageFile() {
@@ -36,7 +36,6 @@ export const productSchemaBase = z.object({
   // image: z.instanceof(File).refine((file) => { return !file || file.size <= maxUploadSize; }, `File size must be less than 1 MB`),
   // image: validateImageFile(),
   description: z.string().refine(
-    //cách làm theo dạng arrow func có thể refine nhiều func mỗi refine tương đương một func xử lý logic
     (description) => {
       const wordCount = description.split(' ').length;
       return wordCount >= 10 && wordCount <= 1000;
@@ -48,7 +47,6 @@ export const productSchemaBase = z.object({
 });
 export const createProductSchema = productSchemaBase.extend({
   image: z.string().min(1, 'Image is required'),
-  //  image: z.string().optional().or(z.literal('')), chấp nhận không ảnh
 });
 
 export const editProductSchema = productSchemaBase.extend({
@@ -76,62 +74,21 @@ export const reviewSchema = z.object({
     .max(1000, { message: 'Comment must be at most 1000 characters long' }),
 });
 
-// export type CreateAndEditJobType = z.infer<typeof createProductSchema>;
-// export function validateWithZodSchema<T>( cách làm của tutorial basic
-//   schema: ZodSchema<T>,
-//   data: unknown,
-// ): T {
-//   const result = schema.safeParse(data);
-//   if (!result.success) {
-//     const errors = result.error.errors.map((error) => error.message);
-//     throw new Error(errors.join(', '));
-//   }
-//   return result.data;
-// }
-
-// export function validateWithZodSchema<T>(
-//   schema: ZodSchema<T>,
-//   data: any
-// ): T {
-//   const result = schema.safeParse(data);
-
-//   if (!result.success) {
-//     const errors = result.error.flatten().fieldErrors;
-
-//     // Ở đây chúng ta throw một object chứa cả message và errors
-//     // Để hàm createProductAction có thể bắt được trong khối catch
-//     // dùng trực tiếp đơn giản nhưng muốn common bài bản
-// thì tạo class cho chuyên nghiệp tức định nghĩa kiểu dữ liệu rõ ràng dang generic
-//     throw {
-//       message: 'Validation failed',
-//       errors: errors,
-//     };
-//   }
-
-//   return result.data;
-// }
-
 export function validateWithZodSchema<T>(schema: ZodSchema<T>, data: any): T {
   const result = schema.safeParse(data);
 
-  // 2. Trong hàm validateWithZodSchema
   if (!result.success) {
-    // console.log(result.error.flatten());
-    // console.log(result.error.format());
-    // console.log(result.error.issues);
+    // Preserve field-level errors so form inputs can render the right message.
     throw new ValidationError(
       'Validation failed',
-      //fieldErrors: { image: [ 'File size must be less than 1 MB' ] }
       result.error.flatten().fieldErrors,
     );
   }
 
   return result.data;
 }
-// 1. Tạo lớp lỗi riêng
-export class ValidationError extends Error {
-  // Thêm undefined vào đây để khớp với Zod
 
+export class ValidationError extends Error {
   errors: Record<string, string[] | undefined>;
 
   constructor(message: string, errors: Record<string, string[] | undefined>) {

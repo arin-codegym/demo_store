@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useChatUiStore } from '@/stores/chat-ui-store';
 import { AdminChatWidget } from '@/components/chat/AdminChatWidget';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
-import { useMarkReadByConversationId } from '@/query/notifications/useMarkReadByConversation';
 import { shouldHideGlobalChat } from './chat-route-visibility';
 
 function mapConversationTypeToQueryType(
@@ -64,14 +63,6 @@ export function GlobalConversationChat() {
   //   markReadByConversation,
   // ]);
 
-  useEffect(() => {
-    console.log('conversationWidgetOpen =', conversationWidgetOpen);
-    console.log(
-      'conversationWidgetConversationId =',
-      conversationWidgetConversationId,
-    );
-    console.log('conversationWidgetType =', conversationWidgetType);
-  });
   if (shouldHideGlobalChat(pathname)) return null;
 
   if (!conversationWidgetOpen || !conversationWidgetConversationId) {
@@ -86,6 +77,7 @@ export function GlobalConversationChat() {
   const handleOpenInMain = () => {
     const queryType = mapConversationTypeToQueryType(conversationWidgetType);
 
+    // Transfer the floating widget state into the full chat page route.
     closeConversationWidget();
     lastMarkedKeyRef.current = null;
 

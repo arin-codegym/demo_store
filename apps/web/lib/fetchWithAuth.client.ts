@@ -4,40 +4,20 @@ import { ApiError, pickMessage, readBody } from './error';
 
 /**
  * fetchWithAuth (client-only)
- * - Dùng trong React Query / Client Components.
- * - Luôn gửi cookie (credentials: "include").
- * - Nếu gặp 401 => gọi /api/auth/refresh (Next route handler) để refresh cookie,
- *   rồi retry request gốc 1 lần.
  *
- * Quy ước:
- * - url nên là endpoint cùng origin (ví dụ "/api/...") để tránh CORS.
- * - /api/auth/refresh phải là route.ts proxy sang Spring và forward Set-Cookie về browser.
+ * Use this from Client Components and React Query hooks. Requests should go to
+ * same-origin Next route handlers (`/api/...`) so the browser can store any
+ * refreshed httpOnly cookies forwarded by those handlers.
  */
 
 export type FetchWithAuthOptions = RequestInit & {
-  /**
-   * Nếu true (mặc định), tự gọi refresh khi gặp 401 và retry 1 lần.
-   */
+  /** Retry the original request once after a successful refresh. */
   autoRefresh?: boolean;
 
-  /**
-   * Endpoint refresh nội bộ (mặc định: "/api/auth/refresh")
-   */
+  /** Same-origin endpoint that refreshes cookies through the Next backend. */
   refreshEndpoint?: string;
 };
-/* Đổi signature fetchWithAuth để overload theo “có thể null” / “không null” */
-// export function fetchWithAuth<T = any>(url: string, options?: FetchWithAuthOptions & { allowNull: true }): Promise<T | null>;
-// export function fetchWithAuth<T = any>(url: string, options?: FetchWithAuthOptions & { allowNull?: false }): Promise<T>;
 
-/* Use : Nếu muốn check res.ok
-const res = await fetchWithAuth(`/api/favorites/delete/${currentFavoriteId}`, {
-  method: 'DELETE',
-  cache: 'no-store',
-});
-if (!res.ok) {
-  throw new Error('Failed to remove favorite');
-}
-*/
 export async function fetchWithAuth<T = any>(
   url: string,
   options: FetchWithAuthOptions = {},
@@ -48,12 +28,10 @@ export async function fetchWithAuth<T = any>(
     ...init
   } = options;
 
-  // Merge headers an toàn (không override lung tung)
   const buildHeaders = () => {
     const finalHeaders = new Headers(init.headers);
 
-    // Chỉ set Content-Type khi body là JSON string
-    // (nếu bạn gửi FormData thì để browser tự set boundary)
+    // Do not set Content-Type for FormData; the browser must add the boundary.
     if (!finalHeaders.has('Content-Type') && typeof init.body === 'string') {
       finalHeaders.set('Content-Type', 'application/json');
     }
@@ -72,7 +50,8 @@ export async function fetchWithAuth<T = any>(
   };
 
   let res = await doFetch();
-  // Access token hết hạn / chưa có access nhưng có refresh
+
+  // A failed refresh means the caller should redirect or clear cached auth state.
   if (res.status === 401 && autoRefresh) {
     const refreshRes = await fetch(refreshEndpoint, {
       method: 'POST',
@@ -83,7 +62,6 @@ export async function fetchWithAuth<T = any>(
       throw new Error('UNAUTHORIZED');
     }
 
-    // retry 1 lần sau khi refresh
     res = await doFetch();
   }
 
@@ -109,26 +87,6 @@ export async function fetchWithAuth<T = any>(
   // return (await res.json()) as T;
   return res;
 }
-
-/* Use : chỉ cần data
-const data = await fetchJsonWithAuth<{ message: string }>(
-  `/api/favorites/add/${productId}`,
-  {
-    method: 'POST',
-    cache: 'no-store',
-    body: JSON.stringify(productId),
-  }
-);
-console.log(data?.message);
-Với case favorite add:
-await fetchJsonWithAuth<{ message: string }>(
-  `/api/favorites/add/${productId}`,
-  {
-    method: 'POST',
-    cache: 'no-store',
-  }
-);
-*/
 
 export async function fetchJsonWithAuth<T = unknown>(
   url: string,

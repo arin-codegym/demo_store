@@ -1,11 +1,11 @@
-//\api\admin\users\update\[userId]\route.ts
 import { fetchWithAuthServer } from '@/lib/fetchWithAuth.server';
 import { NextRequest, NextResponse } from 'next/server';
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
 ) {
-  const { userId } = await params; // ✅ userId ở đây
+  const { userId } = await params;
   const payload = await req.json();
   const cookieHeader = req.headers.get('cookie') || '';
   const pathname = new URL(req.url).pathname;
@@ -14,7 +14,6 @@ export async function PUT(
     {
       method: 'PUT',
       headers: {
-        // quan trọng nhất:
         'Content-Type': 'application/json',
         cookie: cookieHeader,
         accept: 'application/json',
@@ -22,7 +21,7 @@ export async function PUT(
       body: JSON.stringify(payload),
     },
   );
-  // parse body
+
   const ct = result.headers.get('content-type') || '';
   const data = ct.includes('application/json')
     ? await result.json()

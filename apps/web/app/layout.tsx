@@ -13,11 +13,6 @@ export const metadata: Metadata = {
   description: 'A nifty store built with Next.js',
 };
 
-/**
- * ROOT LAYOUT (Server Component)
- * Đây là tệp cấu hình cao nhất, bao bọc toàn bộ các trang trong ứng dụng.
- * Chúng ta sử dụng async để có thể gọi các hàm Server Side Actions ngay tại đây.
- */
 export default async function RootLayout({
   children,
 }: Readonly<{

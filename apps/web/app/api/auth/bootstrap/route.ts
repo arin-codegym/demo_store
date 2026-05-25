@@ -1,13 +1,14 @@
-// app/api/auth/bootstrap/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'nodejs'; // tránh edge để xử lý set-cookie ổn định hơn
-/* Đây là pattern hợp lệ: server-side refresh + redirect. */
+export const runtime = 'nodejs';
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const next = getSafeRedirectPath(url.searchParams.get('next'));
   const redirectBaseUrl = getRedirectBaseUrl(req);
-  // ✅ forward ALL cookies (refreshToken + sid + ...)
+
+  // Bootstrap is used after OAuth or a hard refresh: refresh server-side, then
+  // redirect the browser to a local path with fresh httpOnly cookies attached.
   const cookieHeader = req.headers.get('cookie');
   if (!cookieHeader) {
     const res = NextResponse.redirect(new URL('/', redirectBaseUrl));
@@ -16,7 +17,6 @@ export async function GET(req: NextRequest) {
     res.cookies.delete('sid');
     return res;
   }
-  // Gọi Spring refresh (server-to-server)
   const refreshRes = await fetch(`${process.env.API_EXTERNAL}/auth/refresh`, {
     method: 'GET',
     headers: { Cookie: cookieHeader },
@@ -51,11 +51,9 @@ export async function GET(req: NextRequest) {
     return res;
   }
 
-  // Trả về redirect về trang user muốn vào
   const res = NextResponse.redirect(new URL(next, redirectBaseUrl));
 
-  // Quan trọng: backend có thể trả NHIỀU Set-Cookie (access + refresh)
-  // Node fetch (undici) thường có getSetCookie()
+  // Spring can issue multiple cookies; append each one so none is overwritten.
   const anyHeaders = refreshRes.headers as any;
   const setCookies: string[] = (
     typeof anyHeaders.getSetCookie === 'function'

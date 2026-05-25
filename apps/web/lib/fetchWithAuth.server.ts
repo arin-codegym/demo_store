@@ -1,17 +1,11 @@
 import 'server-only';
 
 /**
- * Server-side fetch wrapper có:
- * - forward Cookie header
- * - nếu gặp 401 thì gọi refresh endpoint rồi retry 1 lần
- * - trả về Response thật + danh sách Set-Cookie để route handler forward về browser
+ * Server-side fetch wrapper for route handlers and server actions.
  *
- * Quy ước:
- * - Hàm này KHÔNG parse JSON sẵn
- * - Hàm này KHÔNG trả object giả Response
- * - Caller tự quyết định:
- *   - return response trực tiếp
- *   - hoặc đọc response.json() rồi custom NextResponse
+ * It forwards the incoming Cookie header, refreshes once on 401, retries the
+ * original request with the refreshed cookies, and returns Set-Cookie values so
+ * the caller can forward them to the browser.
  */
 
 export type FetchWithAuthServerResult = {
@@ -22,6 +16,8 @@ export type FetchWithAuthServerResult = {
 function splitSetCookie(raw: string | null): string[] {
   if (!raw) return [];
 
+  // A single Set-Cookie header can contain commas in Expires, so split only at
+  // the start of the next cookie pair.
   return raw
     .split(/,(?=\s*[^;]+=[^;]+)/g)
     .map((s) => s.trim())
@@ -65,21 +61,7 @@ function mergeCookieHeader(
     .map(([name, value]) => `${name}=${value}`)
     .join('; ');
 }
-/* retry ngay trong server 
-Nó có thể tự gắn lại cookie khi được gọi trong action hoặc route 
-tức bản chất phải được goị ở client và trong route phải thêm như ví dụ:
-const { response, setCookie } = await fetchWithAuthServer(...);
 
-const data = await response.json();
-const res = NextResponse.json(data, { status: response.status });
-
-for (const cookie of setCookie) {
-  res.headers.append('set-cookie', cookie);
-}
-
-return res;
-
-*/
 export async function fetchWithAuthServer(
   url: string,
   options: RequestInit & {
@@ -124,10 +106,8 @@ export async function fetchWithAuthServer(
 
   let currentCookieHeader = cookieHeader ?? null;
 
-  // 1) request chính
   let { response, setCookie } = await doFetch(currentCookieHeader);
 
-  // 2) nếu 401 thì refresh rồi retry 1 lần
   if (response.status === 401) {
     const refreshRes = await fetch(refreshUrl, {
       method: 'POST',
@@ -147,7 +127,8 @@ export async function fetchWithAuthServer(
       };
     }
 
-    // merge cookie mới từ refresh vào cookie header để retry chuẩn hơn
+    // Retry with the freshly issued cookie values instead of the stale request
+    // header, otherwise the retry would repeat the same 401.
     currentCookieHeader = mergeCookieHeader(cookieHeader, refreshSetCookie);
 
     ({ response } = await doFetch(currentCookieHeader));

@@ -1,6 +1,5 @@
 import { fetchWithAuth } from '@/lib/fetchWithAuth.client';
 import { useQuery } from '@tanstack/react-query';
-import React from 'react';
 
 export default function useGetUsers() {
   return useQuery<any[]>({
@@ -9,8 +8,8 @@ export default function useGetUsers() {
       const res = await fetchWithAuth('/api/admin/users');
       const data = await res.json();
 
-      return data ?? []; // ✅ không bao giờ null
+      return data ?? [];
     },
-    retry: false, // tránh retry spam khi 401/403
+    retry: false,
   });
 }

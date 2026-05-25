@@ -1,36 +1,5 @@
 'use client';
 
-// import { fetchWithAuth } from '@/lib/fetchWithAuth';
-// import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-// export function useAddToCart() {
-//   const queryClient = useQueryClient();
-
-//   return useMutation({
-//     mutationFn: async (payload: { productId: string; amount: number }) => {
-//       // const res = await fetch('/api/cart/add', {
-//       //   method: 'POST',
-//       //   credentials: 'include',
-//       //   headers: { 'Content-Type': 'application/json' },
-//       //   body: JSON.stringify(payload),
-//       // });
-
-//       // if (!res.ok) throw new Error('Add cart failed');
-//       // return res.json();
-//       return fetchWithAuth('/api/cart/add', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(payload),
-//       });
-//     },
-
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['cart-count'] });
-//       queryClient.invalidateQueries({ queryKey: ['cart'] });
-//     },
-//   });
-// }
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 type AddToCartPayload = {
@@ -40,7 +9,7 @@ type AddToCartPayload = {
 
 export function useAddToCart() {
   const queryClient = useQueryClient();
-  /* onMutate → mutationFn → result → onSuccess/onError → onSettled */
+
   return useMutation({
     mutationFn: async ({ productId, amount }: AddToCartPayload) => {
       const res = await fetch('/api/cart/add', {
@@ -55,7 +24,6 @@ export function useAddToCart() {
       return res.json();
     },
 
-    // 🚀 OPTIMISTIC UPDATE
     onMutate: async (newItem) => {
       await queryClient.cancelQueries({ queryKey: ['cart'] });
 
@@ -68,18 +36,28 @@ export function useAddToCart() {
           (item: any) => item.productId === newItem.productId,
         );
 
-        if (existingItem) {
-          existingItem.amount += newItem.amount;
-        } else {
-          old.cartDetails.cartItems.push({
-            productId: newItem.productId,
-            amount: newItem.amount,
-          });
-        }
+        const cartItems = existingItem
+          ? old.cartDetails.cartItems.map((item: any) =>
+              item.productId === newItem.productId
+                ? { ...item, amount: item.amount + newItem.amount }
+                : item,
+            )
+          : [
+              ...old.cartDetails.cartItems,
+              {
+                productId: newItem.productId,
+                amount: newItem.amount,
+              },
+            ];
 
-        old.cartDetails.numItemsInCart += newItem.amount;
-
-        return { ...old };
+        return {
+          ...old,
+          cartDetails: {
+            ...old.cartDetails,
+            cartItems,
+            numItemsInCart: old.cartDetails.numItemsInCart + newItem.amount,
+          },
+        };
       });
       queryClient.setQueryData(['cart-count'], (old: number) => {
         return (old || 0) + newItem.amount;
@@ -87,7 +65,6 @@ export function useAddToCart() {
       return { previousCart, previousCount };
     },
 
-    // ❌ rollback nếu fail
     onError: (err, variables, context) => {
       if (context?.previousCart) {
         queryClient.setQueryData(['cart'], context.previousCart);
@@ -95,7 +72,6 @@ export function useAddToCart() {
       queryClient.setQueryData(['cart-count'], context?.previousCount);
     },
 
-    // ✅ sync lại data thật từ server
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['cart-count'] });

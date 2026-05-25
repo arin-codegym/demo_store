@@ -4,21 +4,8 @@ import type { AppNotification, NotificationListResponse } from '@/utils/types';
 
 type NotificationInfiniteData = InfiniteData<NotificationListResponse>;
 
-/**
- *	Hàm này thêm notification mới vào đầu danh sách notification đang cache ở frontend.
- *
- *	Mục đích:
- *	Khi user mở chuông thông báo, notification mới xuất hiện ngay
- *	mà không cần reload trang.
- *
- *	Các hàm khác trong file này sẽ cập nhật cache khi có sự kiện liên quan đến notification xảy ra,
- *	như đánh dấu đã đọc, xóa notification,... để đảm bảo cache luôn đồng bộ với trạng thái thực tế của notification trên server.
- *
- * Note: Các hàm này chỉ cập nhật cache ở frontend, không gửi bất kỳ request nào lên server.
- *  Việc đồng bộ với server sẽ được xử lý thông qua các API khác khi user thực hiện hành động liên quan đến notification.
- *
- */
-
+// These helpers only update React Query cache. Server persistence happens in
+// the API calls that trigger the corresponding realtime event.
 export function prependNotificationToCache(
   queryClient: QueryClient,
   notification: AppNotification,
@@ -61,22 +48,6 @@ export function prependNotificationToCache(
     },
   );
 }
-
-/**
- *	Hàm này tăng số notification chưa đọc trên chuông.
- *
- *	Ví dụ:
- *	Đang là 2 notification chưa đọc
- *	Có notification mới
- *	→ tăng thành 3 notification chưa đọc
- *
- *	Mục đích: khi có notification mới mà user chưa mở chuông ra xem, số lượng notification chưa đọc trên chuông sẽ tăng lên để thu hút sự chú ý của user.
- *
- *	Các hàm khác trong file này sẽ cập nhật cache khi có sự kiện liên quan đến notification xảy ra, như đánh dấu đã đọc, xóa notification,... để đảm bảo cache luôn đồng bộ với trạng thái thực tế của notification trên server.
- *
- * Note: Các hàm này chỉ cập nhật cache ở frontend, không gửi bất kỳ request nào lên server.
- *  Việc đồng bộ với server sẽ được xử lý thông qua các API khác khi user thực hiện hành động liên quan đến notification.
- */
 
 export function increaseUnreadNotificationCount(queryClient: QueryClient) {
   queryClient.setQueryData(

@@ -27,22 +27,6 @@ export const fetchFeaturedProducts = async () => {
   return data.featureProducts ?? [];
 };
 
-export const fetchAllProductsOld = async ({
-  search = '',
-}: {
-  search: string;
-}) => {
-  const res = await fetch(
-    `${process.env.API_EXTERNAL}/product/fetchAllProducts?search=${search}`,
-    {
-      method: 'GET',
-      cache: 'no-store',
-    },
-  );
-  const products = await res.json();
-  return products.featureProducts;
-};
-
 export const fetchAllProducts = async (): Promise<Product[]> => {
   const res = await fetch(
     `${process.env.API_EXTERNAL}/product/fetchAllProducts`,
@@ -79,26 +63,6 @@ export const searchProducts = async (search: string): Promise<Product[]> => {
   return data.products ?? [];
 };
 
-type FetchProductsArgs = {
-  search?: string;
-  category?: string;
-  sort?: string;
-  page?: number;
-};
-export const fetchProducts = async ({
-  search = '',
-  category = '',
-  sort = 'newest',
-  page = 1,
-}: FetchProductsArgs) => {
-  const items = { rows: [{ total: 1 }], limit: 1 };
-  return {
-    products: items.rows,
-    total: items.rows[0].total,
-    page,
-    pageSize: items.limit,
-  };
-};
 export const fetchAdminProductDetails = async (productId: string) => {
   const headerList = await headers();
   const res = await fetch(
@@ -109,7 +73,6 @@ export const fetchAdminProductDetails = async (productId: string) => {
       cache: 'no-store',
     },
   );
-  // if (!product) redirect('/admin/products');
   if (!res.ok) {
     throw Error(await res.text());
   }
@@ -121,7 +84,6 @@ export const updateProductImageAction = async (
   prevState: any,
   formData: FormData,
 ) => {
-  // await getAuthUser();
   const headerList = await headers();
   try {
     const image = formData.get('image') as File;
@@ -144,9 +106,8 @@ export const updateProductImageAction = async (
     if (!res.ok) {
       renderError(res.json);
     }
-    /*  ví dụ dùng action thay cho react query chứ page này 
-    nên dùng react query mới đúng bài vì logic này không nên làm ở SSR mà 
-    nên để CSR*/
+    // The edit page is server-rendered, so invalidate its RSC cache after the
+    // backend accepts the new image URL.
     revalidatePath(`/admin/products/${productId}/edit`);
     return { message: 'Product Image updated successfully' };
   } catch (error) {
@@ -210,7 +171,6 @@ export const fetchAdminProducts = async () => {
 
 export type FormResponse = {
   message: string;
-  // errors: Record<string, string[] | undefined> | undefined;
   errors?: Record<string, string[] | undefined>;
 };
 export const deleteProductAction = async (
@@ -226,7 +186,11 @@ export const deleteProductAction = async (
       `${process.env.API_EXTERNAL}/product/deleteProduct/${productId}`,
       {
         method: 'DELETE',
-        headers: headerList,
+        headers: {
+          cookie: headerList.get('cookie') ?? '',
+          authorization: headerList.get('authorization') ?? '',
+          accept: 'application/json',
+        },
         cache: 'no-store',
       },
     );
@@ -237,14 +201,7 @@ export const deleteProductAction = async (
     if (image != '') {
       await deleteImage(image);
     }
-    /* cần thêm accept: 'application/json' 
-revalidatePath không gọi lại như một browser request bình thường.
-Nó gọi lại như một RSC request của Next.
-Bạn lại forward nguyên headers() sang backend Java, nên backend bị ép phải trả theo text/x-component,
- trong khi nó chỉ biết trả JSON.
- kiểu của nó sẽ là ACCEPT = text/x-component -> Srping trả về kiểu đó nhưng
- ở nới fetch mà dùng res.json() là lỗi liền
-*/
+    // Keep both admin and storefront product caches in sync after deletion.
     revalidatePath('/admin/products');
     revalidatePath('/products');
     revalidateTag('products', 'max');
@@ -255,12 +212,10 @@ Bạn lại forward nguyên headers() sang backend Java, nên backend bị ép p
 };
 
 export const fetchSingleProduct = async (productId: string) => {
-  const apiUrl = process.env.API_EXTERNAL;
-
   const product = await fetch(
     `${process.env.API_EXTERNAL}/product/${productId}`,
     {
-      cache: 'no-store', // Đảm bảo luôn lấy dữ liệu mới nhất
+      cache: 'no-store',
     },
   );
 

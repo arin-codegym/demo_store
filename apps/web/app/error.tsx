@@ -10,7 +10,6 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Bạn có thể log lỗi ra service theo dõi lỗi ở đây
     console.error('Lỗi từ Server Component:', error);
   }, [error]);
 
@@ -21,7 +20,7 @@ export default function Error({
         {error.message || 'Không thể tải danh sách đánh giá lúc này.'}
       </p>
       <button
-        onClick={() => reset()} // Thử chạy lại hàm fetch trong page.tsx
+        onClick={() => reset()}
         className='px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
       >
         Thử lại

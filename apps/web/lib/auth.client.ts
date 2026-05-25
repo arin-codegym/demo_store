@@ -3,16 +3,15 @@ export async function loginClient(username: string, password: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
-    credentials: 'include', // ✅ cực quan trọng
-    // mode: 'cors',                 // (thường không cần, nhưng có thể thêm)
+    credentials: 'include',
   });
-  // ✅ luôn thử đọc body (json hoặc text) để lấy message
+
+  // Login errors may come back as JSON or plain text depending on backend path.
   let payload: any = null;
   const contentType = res.headers.get('content-type') || '';
   try {
     if (contentType.includes('application/json')) {
       payload = await res.json();
-      // console.log(payload);
     } else {
       const text = await res.text();
       payload = text ? JSON.parse(text) : null;
@@ -24,11 +23,10 @@ export async function loginClient(username: string, password: string) {
   if (!res.ok) {
     const msg =
       payload?.message ||
-      payload?.error || // phòng khi backend trả field khác
+      payload?.error ||
       'Sai tài khoản hoặc mật khẩu.';
     throw new Error(msg);
   }
 
-  // backend bạn đang trả LoginResponse(userDto) => có thể lấy nếu cần
   return res.json().catch(() => null);
 }

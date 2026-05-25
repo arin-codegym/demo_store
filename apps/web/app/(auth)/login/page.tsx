@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { LuEyeOff } from 'react-icons/lu';
 import { toast } from '@/components/ui/use-toast';
 import { LuLoader } from 'react-icons/lu';
@@ -26,16 +26,9 @@ export type LoginState = {
   username: string;
 };
 
-const initState: LoginState = {
-  success: false,
-  error: null,
-  username: '',
-};
-
 /**
- * LoginPage: Sử dụng Server Actions và useActionState (React 19). userFormState(cũ) đã bị deprecate. làm chức năng đăng nhập.
- * - formAction: Là hàm dispatch nhận vào formData (trả về void).
- * - state: Nhận kết quả từ logic return của loginAction (prevState).
+ * Login is intentionally handled through the Next route handler so the browser
+ * receives the httpOnly Set-Cookie headers from the backend.
  */
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -52,21 +45,19 @@ function LoginPage() {
     if (!isLoading && currentUser) {
       route.push('/');
     }
-  }, [, currentUser, isLoading]);
+  }, [currentUser, isLoading, route]);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate(
       { username, password },
       {
-        // ✅ Gọi toast ngay tại đây
         onSuccess: () => {
           toast({
-            description: 'Đăng nhập thành công!',
-            duration: 1000, // Chạy trong 3 giây
+            description: 'Login successful !',
+            duration: 1000,
           });
         },
-        // ✅ Và hiển thị lỗi tại đây
         onError: (error) => {
           toast({
             variant: 'destructive',
@@ -157,7 +148,7 @@ function LoginPage() {
             {isPending ? (
               <>
                 <LuLoader className='mr-2 h-4 w-4 animate-spin' />
-                Đang xử lý...
+                Processing...
               </>
             ) : (
               'Login'
@@ -171,7 +162,7 @@ function LoginPage() {
               window.location.href = '/api/backend/oauth2/authorization/google';
             }}
           >
-            {/* SVG Logo Google chuẩn */}
+            {/* Inline logo keeps this button independent from external assets. */}
             <svg
               xmlns='http://www.w3.org/2000/svg'
               viewBox='0 0 48 48'
