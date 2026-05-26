@@ -92,6 +92,14 @@ app:
     secret: ${JWT_SECRET}
     issuer: ${JWT_ISSUER:quochuy-store}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  websocket:
+    relay:
+      enabled: ${WS_RELAY_ENABLED:true}
+      host: ${RABBITMQ_STOMP_HOST:rabbitmq}
+      port: ${RABBITMQ_STOMP_PORT:61613}
+      login: ${RABBITMQ_STOMP_LOGIN}
+      passcode: ${RABBITMQ_STOMP_PASSCODE}
+      virtual-host: ${RABBITMQ_VHOST:/}
   frontend-url: ${FRONTEND_URL}
   mail:
     enabled: ${APP_MAIL_ENABLED:true}

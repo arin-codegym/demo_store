@@ -1,0 +1,71 @@
+name: Deploy Backend Node
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_tag:
+        description: Backend image tag to deploy
+        required: false
+        default: latest
+
+env:
+  BACKEND_IMAGE: arin89/store-springboot-backend
+
+jobs:
+  deploy_backend_node:
+    name: Deploy backend-only EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout deploy files
+        uses: actions/checkout@v4
+
+      - name: Prepare backend node directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_BACKEND_NODE_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: mkdir -p /home/ubuntu/backend
+
+      - name: Copy backend-node compose to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_BACKEND_NODE_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: infra/docker-compose.backend-node.yml
+          target: /home/ubuntu/backend
+          strip_components: 1
+
+      - name: Deploy backend node
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_BACKEND_NODE_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/backend
+            mv docker-compose.backend-node.yml docker-compose.yml
+
+            cat > .env << 'EOF'
+            ${{ secrets.PROD_ENV_FILE }}
+            EOF
+
+            upsert_env() {
+              key="$1"
+              value="$2"
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env
+              else
+                echo "${key}=${value}" >> .env
+              fi
+            }
+
+            upsert_env BACKEND_IMAGE "${{ env.BACKEND_IMAGE }}"
+            upsert_env BACKEND_TAG "${{ github.event.inputs.backend_tag }}"
+
+            docker compose pull backend
+            docker compose up -d --remove-orphans backend
+            docker image prune -f

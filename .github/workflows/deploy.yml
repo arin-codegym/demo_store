@@ -108,7 +108,7 @@ jobs:
           target: /home/ubuntu/app
           strip_components: 1
 
-      - name: Deploy backend and redis to EC2
+      - name: Deploy backend to app EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -152,8 +152,8 @@ jobs:
               upsert_env FRONTEND_TAG "$existing_frontend_tag"
             fi
 
-            docker compose pull backend redis
-            docker compose up -d --remove-orphans backend redis
+            docker compose pull backend
+            docker compose up -d --remove-orphans backend
             docker image prune -f
 
   frontend_build:

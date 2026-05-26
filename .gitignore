@@ -51,3 +51,5 @@ application-local.yml
 # Runtime uploads/cache
 uploads/
 **/uploads/
+docs/email-activation.sql
+deploy/infra.env

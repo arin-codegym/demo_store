@@ -1,7 +1,8 @@
 package com.quochuy.websocket.config;
 
-import com.quochuy.websocket.handshake.UserIdHandshakeInterceptor;
 import com.quochuy.websocket.handshake.UserIdHandshakeHandler;
+import com.quochuy.websocket.handshake.UserIdHandshakeInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -11,24 +12,40 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+	@Value("${app.websocket.relay.enabled:false}")
+	private boolean relayEnabled;
+	
+	@Value("${app.websocket.relay.host:localhost}")
+	private String relayHost;
+	
+	@Value("${app.websocket.relay.port:61613}")
+	private int relayPort;
+	
+	@Value("${app.websocket.relay.login:guest}")
+	private String relayLogin;
+	
+	@Value("${app.websocket.relay.passcode:guest}")
+	private String relayPasscode;
+	
+	@Value("${app.websocket.relay.virtual-host:/}")
+	private String relayVirtualHost;
 	
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
-		// Client subscribe các kênh broker này
-		/**Cho phép client subscribe kiểu:
-			 /topic/conversations/123
-			 /user/queue/messages
-		 * */
-		registry.enableSimpleBroker("/topic", "/queue");
+		if (relayEnabled) {
+			registry.enableStompBrokerRelay("/topic", "/queue")
+					.setRelayHost(relayHost)
+					.setRelayPort(relayPort)
+					.setClientLogin(relayLogin)
+					.setClientPasscode(relayPasscode)
+					.setSystemLogin(relayLogin)
+					.setSystemPasscode(relayPasscode)
+					.setVirtualHost(relayVirtualHost);
+		} else {
+			registry.enableSimpleBroker("/topic", "/queue");
+		}
 		
-		// Nếu client gửi message vào app (nếu sau này cần)
-		/** Nếu sau này client muốn gửi message qua STOMP tới backend thì dùng prefix /app.
-		 Nhưng phase 1 của bạn chưa cần lấy WebSocket làm command path.
-		 */
 		registry.setApplicationDestinationPrefixes("/app");
-		
-		// Prefix cho user-specific queue
-		/**Để dùng convertAndSendToUser(...).*/
 		registry.setUserDestinationPrefix("/user");
 	}
 	
@@ -38,6 +55,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 				.addInterceptors(new UserIdHandshakeInterceptor())
 				.setHandshakeHandler(new UserIdHandshakeHandler())
 				.setAllowedOriginPatterns("*")
-		 .withSockJS();
+				.withSockJS();
 	}
 }

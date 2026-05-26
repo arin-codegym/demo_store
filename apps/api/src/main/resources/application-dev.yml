@@ -81,6 +81,16 @@ app:
     secret: ${JWT_SECRET:dev-jwt-secret-change-me-32-bytes-minimum}
     issuer: ${JWT_ISSUER:quochuy-store}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+  websocket:
+    relay:
+      # Keep local dev runnable without RabbitMQ. Set WS_RELAY_ENABLED=true
+      # when testing multi-instance WebSocket delivery through RabbitMQ.
+      enabled: ${WS_RELAY_ENABLED:false}
+      host: ${RABBITMQ_STOMP_HOST:localhost}
+      port: ${RABBITMQ_STOMP_PORT:61613}
+      login: ${RABBITMQ_STOMP_LOGIN:store_ws}
+      passcode: ${RABBITMQ_STOMP_PASSCODE:store_ws_password}
+      virtual-host: ${RABBITMQ_VHOST:/}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
   mail:
     enabled: ${APP_MAIL_ENABLED:false}

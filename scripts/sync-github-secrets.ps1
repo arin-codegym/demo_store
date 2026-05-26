@@ -7,6 +7,7 @@ $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $ConfigFile = Join-Path $Root "deploy\secrets.local.ps1"
 $GhSecretsFile = Join-Path $Root "deploy\github-actions-secrets.env"
 $ProdEnvFile = Join-Path $Root "deploy\prod.env"
+$InfraEnvFile = Join-Path $Root "deploy\infra.env"
 
 if (-not (Test-Path $ConfigFile)) { throw "Missing $ConfigFile. Copy deploy\secrets.local.example.ps1 first." }
 if (-not (Test-Path $GhSecretsFile)) { throw "Missing $GhSecretsFile. Copy deploy\github-actions-secrets.example.env first." }
@@ -44,6 +45,13 @@ Get-Content -Raw $Ec2SshKeyPath | gh secret set EC2_SSH_KEY -R $Repo
 
 Write-Host "Sync PROD_ENV_FILE..."
 Get-Content -Raw $ProdEnvFile | gh secret set PROD_ENV_FILE -R $Repo
+
+if (Test-Path $InfraEnvFile) {
+    Write-Host "Sync INFRA_ENV_FILE..."
+    Get-Content -Raw $InfraEnvFile | gh secret set INFRA_ENV_FILE -R $Repo
+} else {
+    Write-Host "Skip INFRA_ENV_FILE: $InfraEnvFile not found."
+}
 
 Write-Host "Current GitHub secrets:"
 gh secret list -R $Repo
