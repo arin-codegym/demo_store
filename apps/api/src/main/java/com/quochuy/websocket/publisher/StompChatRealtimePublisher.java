@@ -25,8 +25,9 @@ public class StompChatRealtimePublisher implements ChatRealtimePublisher {
 	
 	@Override
 	public void publishToConversation(UUID conversationId, Object payload) {
-		log.debug("[ws] send topic /topic/conversations/" + conversationId + " payload=" + payload);
-		messagingTemplate.convertAndSend("/topic/conversations/" + conversationId, payload);
+		String destination = "/topic/conversations." + conversationId;
+		log.debug("[ws] send topic " + destination + " payload=" + payload);
+		messagingTemplate.convertAndSend(destination, payload);
 	}
 	
 	@Override

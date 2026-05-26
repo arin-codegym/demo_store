@@ -41,6 +41,7 @@ public class MessageCreatedRealtimeListener {
 												.messageId(message.getMessageId())
 												.conversationId(message.getConversationId())
 												.senderUserId(message.getSenderUserId())
+												.senderType(message.getSenderType())
 												.clientMessageId(message.getClientMessageId())
 												.content(message.getContent())
 												.status(message.getStatus().name())

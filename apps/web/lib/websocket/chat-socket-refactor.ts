@@ -100,7 +100,7 @@ export function subscribeConversation(
     return;
   }
 
-  const destination = `/topic/conversations/${conversationId}`;
+  const destination = `/topic/conversations.${conversationId}`;
 
   conversationSubscription?.unsubscribe();
   conversationSubscription = stompClient.subscribe(destination, (frame) => {
