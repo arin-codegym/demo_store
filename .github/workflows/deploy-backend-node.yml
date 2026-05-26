@@ -66,6 +66,17 @@ jobs:
             upsert_env BACKEND_IMAGE "${{ env.BACKEND_IMAGE }}"
             upsert_env BACKEND_TAG "${{ github.event.inputs.backend_tag }}"
 
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            echo "Disk usage before Docker cleanup:"
+            df -h /
+            docker system df || true
+            docker system prune -af || true
+            docker builder prune -af || true
+            echo "Disk usage after Docker cleanup:"
+            df -h /
+            docker system df || true
+
             docker compose pull backend
             docker compose up -d --remove-orphans backend
             docker image prune -f
