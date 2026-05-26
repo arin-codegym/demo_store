@@ -13,8 +13,15 @@ type Props = {
   onOpenInMain: () => void;
 };
 
-export function AiChatWidget({ conversationId, onClose, onOpenInMain }: Props) {
+export function AiChatWidget({
+  conversationId,
+  currentUserId,
+  onClose,
+  onOpenInMain,
+}: Props) {
   const [content, setContent] = useState('');
+  const [awaitingAiReply, setAwaitingAiReply] = useState(false);
+  const pollingRef = useRef(false);
 
   const {
     data,
@@ -23,6 +30,7 @@ export function AiChatWidget({ conversationId, onClose, onOpenInMain }: Props) {
     isFetching,
     isFetchingNextPage,
     isLoading,
+    refetch,
   } = useInfiniteMessages(conversationId);
   // console.log('[AiChatWidget][render]', {
   //   conversationId,
@@ -33,7 +41,7 @@ export function AiChatWidget({ conversationId, onClose, onOpenInMain }: Props) {
   //   hasNextPage,
   //   totalMessages: data?.pages.flatMap((page) => page).length ?? 0,
   // });
-  const sendMessageMutation = useSendMessageInfinite();
+  const sendMessageMutation = useSendMessageInfinite(currentUserId);
 
   const normalizedMessages = useMemo(() => {
     return data?.pages.flatMap((page) => page) ?? [];
@@ -88,13 +96,41 @@ export function AiChatWidget({ conversationId, onClose, onOpenInMain }: Props) {
         clientMessageId: crypto.randomUUID(),
       });
 
+      setAwaitingAiReply(true);
       setContent('');
     } catch (error) {
       console.error('[ai-chat] send message failed', error);
     }
   };
 
+  useEffect(() => {
+    if (!awaitingAiReply) return;
+    if (lastMessage?.senderType !== 'AI') return;
+
+    setAwaitingAiReply(false);
+  }, [awaitingAiReply, lastMessage?.senderType, lastMessage?.messageId]);
+
+  useEffect(() => {
+    if (!awaitingAiReply || !conversationId) return;
+
+    const intervalId = window.setInterval(async () => {
+      if (pollingRef.current) return;
+
+      pollingRef.current = true;
+      try {
+        await refetch();
+      } finally {
+        pollingRef.current = false;
+      }
+    }, 2000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [awaitingAiReply, conversationId, refetch]);
+
   const isSending = sendMessageMutation.isPending;
+  const showAiProcessing = isSending || awaitingAiReply || isFetching;
   return (
     <div className='fixed bottom-4 right-4 z-50 flex h-[600px] w-[380px] flex-col overflow-hidden rounded-xl border bg-white shadow-2xl'>
       <div className='flex items-center justify-between border-b px-4 py-3'>
@@ -157,7 +193,7 @@ export function AiChatWidget({ conversationId, onClose, onOpenInMain }: Props) {
           </button>
         </form>
 
-        {(sendMessageMutation.isPending || isFetching) && (
+        {showAiProcessing && (
           <div className='mt-2 text-xs text-slate-400'>AI đang xử lý...</div>
         )}
       </div>
