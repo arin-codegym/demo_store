@@ -3,9 +3,10 @@
 type Props = {
   onClick: () => void;
   disabled?: boolean;
+  loading?: boolean;
 };
 
-export function AiChatLauncher({ onClick, disabled }: Props) {
+export function AiChatLauncher({ onClick, disabled, loading }: Props) {
   return (
     <button
       type='button'
@@ -13,7 +14,7 @@ export function AiChatLauncher({ onClick, disabled }: Props) {
       disabled={disabled}
       className='fixed bottom-24 right-4 z-40 rounded-full border bg-white px-4 py-3 shadow'
     >
-      Chat AI
+      {loading ? 'Đang mở...' : 'Chat AI'}
     </button>
   );
 }

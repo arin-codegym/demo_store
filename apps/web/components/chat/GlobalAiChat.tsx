@@ -21,6 +21,7 @@ export function GlobalAiChat() {
   const { data: user, isLoading } = useCurrentUser();
 
   const [isBootstrapping, setIsBootstrapping] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
 
   const dispatch = useChatUiReduxDispatch();
   // Zustand: useChatUiStore((s) => s.setAiConversationId)
@@ -50,6 +51,7 @@ export function GlobalAiChat() {
 
     try {
       setIsBootstrapping(true);
+      setOpenError(null);
 
       let id = aiConversationId;
       if (!id) {
@@ -62,6 +64,7 @@ export function GlobalAiChat() {
       setAiWidgetOpen(true);
     } catch (error) {
       console.error('[ai-chat] open failed', error);
+      setOpenError('Không mở được Chat AI. Vui lòng thử lại.');
     } finally {
       setIsBootstrapping(false);
     }
@@ -106,10 +109,18 @@ export function GlobalAiChat() {
   return (
     <>
       {!aiWidgetOpen && (
-        <AiChatLauncher
-          onClick={handleOpen}
-          disabled={isLoading || isBootstrapping}
-        />
+        <>
+          <AiChatLauncher
+            onClick={handleOpen}
+            disabled={isLoading || isBootstrapping}
+            loading={isBootstrapping}
+          />
+          {openError && (
+            <div className='fixed bottom-40 right-4 z-40 max-w-[260px] rounded-md border border-red-200 bg-white px-3 py-2 text-sm text-red-600 shadow'>
+              {openError}
+            </div>
+          )}
+        </>
       )}
 
       {aiWidgetOpen && aiConversationId && (
