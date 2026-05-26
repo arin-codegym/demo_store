@@ -145,6 +145,14 @@ jobs:
               upsert_env FRONTEND_TAG "$existing_frontend_tag"
             fi
 
+            echo "Disk usage before Docker cleanup:"
+            df -h /
+            docker system df || true
+            docker system prune -af || true
+            docker builder prune -af || true
+            echo "Disk usage after Docker cleanup:"
+            df -h /
+            docker system df || true
             docker compose pull backend
             docker compose up -d --remove-orphans backend
             docker image prune -f
@@ -290,6 +298,14 @@ jobs:
             upsert_env NEXT_PUBLIC_SUPABASE_KEY "${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}"
             upsert_env NEXT_PUBLIC_BACKEND_URL "${{ secrets.NEXT_PUBLIC_BACKEND_URL_BUILD }}"
 
+            echo "Disk usage before Docker cleanup:"
+            df -h /
+            docker system df || true
+            docker system prune -af || true
+            docker builder prune -af || true
+            echo "Disk usage after Docker cleanup:"
+            df -h /
+            docker system df || true
             docker compose pull frontend
             docker compose up -d frontend
             docker image prune -f
