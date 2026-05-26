@@ -153,6 +153,7 @@ jobs:
             echo "Disk usage after Docker cleanup:"
             df -h /
             docker system df || true
+
             docker compose pull backend
             docker compose up -d --remove-orphans backend
             docker image prune -f
@@ -210,6 +211,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}
           NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL_BUILD }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_PRODUCT_IMAGES_BUCKET: ${{ secrets.S3_PRODUCT_IMAGES_BUCKET }}
+          S3_PRODUCT_IMAGES_PUBLIC_BASE_URL: ${{ secrets.S3_PRODUCT_IMAGES_PUBLIC_BASE_URL }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -249,6 +253,9 @@ jobs:
             NEXT_PUBLIC_SUPABASE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}
             API_EXTERNAL=${{ secrets.API_EXTERNAL_BUILD }}
             NEXT_PUBLIC_BACKEND_URL=${{ secrets.NEXT_PUBLIC_BACKEND_URL_BUILD }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            S3_PRODUCT_IMAGES_BUCKET=${{ secrets.S3_PRODUCT_IMAGES_BUCKET }}
+            S3_PRODUCT_IMAGES_PUBLIC_BASE_URL=${{ secrets.S3_PRODUCT_IMAGES_PUBLIC_BASE_URL }}
 
   frontend_deploy:
     name: Deploy frontend
@@ -297,6 +304,9 @@ jobs:
             upsert_env NEXT_PUBLIC_SUPABASE_URL "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
             upsert_env NEXT_PUBLIC_SUPABASE_KEY "${{ secrets.NEXT_PUBLIC_SUPABASE_KEY }}"
             upsert_env NEXT_PUBLIC_BACKEND_URL "${{ secrets.NEXT_PUBLIC_BACKEND_URL_BUILD }}"
+            upsert_env AWS_REGION "${{ secrets.AWS_REGION }}"
+            upsert_env S3_PRODUCT_IMAGES_BUCKET "${{ secrets.S3_PRODUCT_IMAGES_BUCKET }}"
+            upsert_env S3_PRODUCT_IMAGES_PUBLIC_BASE_URL "${{ secrets.S3_PRODUCT_IMAGES_PUBLIC_BASE_URL }}"
 
             echo "Disk usage before Docker cleanup:"
             df -h /
@@ -306,6 +316,7 @@ jobs:
             echo "Disk usage after Docker cleanup:"
             df -h /
             docker system df || true
+
             docker compose pull frontend
             docker compose up -d frontend
             docker image prune -f
