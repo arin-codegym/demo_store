@@ -1,9 +1,6 @@
 import { Card, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { formatCurrency } from '@/utils/format';
-// import { createOrderAction } from '@/utils/actions';
-import FormContainer from '../form/FormContainer';
-import { SubmitButton } from '../form/Buttons';
 import { Cart } from '@/utils/types';
 import { useCreateOrder } from '@/query/orders/useCreateOrder';
 import { Button } from '../ui/button';
@@ -22,10 +19,13 @@ function CartTotals({ cart }: { cart: Cart }) {
           <CartTotalRow label='Order Total' amount={orderTotal} lastRow />
         </CardTitle>
       </Card>
-      {/* <FormContainer action={createOrderAction}>
-        <SubmitButton text='Place Order' className='w-full mt-8' />
-      </FormContainer> */}
-      <Button type='button' onClick={() => mutate()} disabled={isPending}>
+      <Button
+        type='button'
+        onClick={() => {
+          if (!isPending) mutate();
+        }}
+        disabled={isPending}
+      >
         {isPending ? 'Processing...' : 'Place Order'}
       </Button>
     </div>

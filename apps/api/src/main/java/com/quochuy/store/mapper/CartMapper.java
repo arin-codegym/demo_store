@@ -14,9 +14,9 @@ public interface CartMapper {
 	
 	Cart fetchCartByUser(@Param("userId") UUID userId);
 	
-	Optional<Cart> findByCartId(UUID cardId);
+	Optional<Cart> findByCartId(@Param("cartId") UUID cartId);
 	
 	void createCart(@Param("userId") UUID userId);
 	
-	void clearCart(UUID cartId);
+	void clearCart(@Param("cartId") UUID cartId);
 }

@@ -3,12 +3,13 @@ package com.quochuy.store.service.impl;
 import com.quochuy.store.mapper.CartItemMapper;
 import com.quochuy.store.mapper.CartMapper;
 import com.quochuy.store.model.Cart;
+import com.quochuy.store.service.CartMutationResult;
 import com.quochuy.store.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,10 +20,10 @@ public class CartServiceImpl implements CartService {
 	private final CartItemMapper cartItemMapper;
 	
 	@Override
-	public Optional<Integer> countItemsByUsername(
+	public int countItemsByUsername(
 			UUID userId) {
 		return cartMapper.countItemsByUsername(userId)
-				.orElse(0).describeConstable();
+				.orElse(0);
 	}
 	
 	@Override
@@ -41,12 +42,8 @@ public class CartServiceImpl implements CartService {
 	public Cart addProductToCart(UUID userId,
 								 UUID productId,
 								 int amount) {
-		Cart cart = cartMapper.fetchCartByUser(userId);
-		/*Create cart if not exits*/
-		if (Objects.isNull(cart)) {
-			cartMapper.createCart(userId);
-			cart = cartMapper.fetchCartByUser(userId);
-		}
+		validateAmount(amount);
+		Cart cart = fetchOrCreateCart(userId);
 		//		CartItem cartItem = cartItemMapper.fetchCartItem(productId);
 		//		/*create or update cart item*/
 		//		if (Objects.nonNull(cartItem)) {
@@ -81,9 +78,19 @@ public class CartServiceImpl implements CartService {
 	//	@Transactional(rollbackFor = Exception.class)
 	@Transactional
 	@Override
-	public void updateItemCart(UUID cartItemId,
-							   int amount) {
-		cartItemMapper.updateCartItem(cartItemId, amount);
+	public CartMutationResult updateItemCart(UUID userId,
+											 UUID cartItemId,
+											 int amount,
+											 OffsetDateTime updatedAt) {
+		validateAmount(amount);
+		if (cartItemMapper.updateCartItem(userId, cartItemId, amount, updatedAt) > 0) {
+			return CartMutationResult.SUCCESS;
+		}
+		if (updatedAt != null &&
+				cartItemMapper.countCartItemByUser(userId, cartItemId) > 0) {
+			return CartMutationResult.CONFLICT;
+		}
+		return CartMutationResult.NOT_FOUND;
 	}
 	
 	@Override
@@ -97,13 +104,25 @@ public class CartServiceImpl implements CartService {
 	
 	@Transactional
 	@Override
-	public void removeItemCard(UUID cartItemId) {
-		cartItemMapper.removeItemCard(cartItemId);
+	public boolean removeItemCard(UUID userId,
+								  UUID cartItemId) {
+		return cartItemMapper.removeItemCard(userId, cartItemId) > 0;
 	}
 	
 	@Override
 	public Optional<Cart> fetchCartDetails(UUID userId) {
 		return Optional.ofNullable(cartMapper.fetchCartByUser(userId));
+	}
+
+	private Cart fetchOrCreateCart(UUID userId) {
+		cartMapper.createCart(userId);
+		return cartMapper.fetchCartByUser(userId);
+	}
+
+	private void validateAmount(int amount) {
+		if (amount < 1) {
+			throw new IllegalArgumentException("Cart item amount must be greater than zero");
+		}
 	}
 }
 /*@Override

@@ -18,6 +18,36 @@ export type FetchWithAuthOptions = RequestInit & {
   refreshEndpoint?: string;
 };
 
+const refreshRequests = new Map<string, Promise<void>>();
+
+function refreshSession(refreshEndpoint: string): Promise<void> {
+  // Look up the in-flight refresh Promise for this endpoint first.
+  let refreshRequest = refreshRequests.get(refreshEndpoint);
+
+  if (!refreshRequest) {
+    // If none exists, this caller creates the real refresh HTTP request and
+    // stores its Promise so later callers can reuse the same value.
+    refreshRequest = fetch(refreshEndpoint, {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then((refreshRes) => {
+        if (!refreshRes.ok) {
+          throw new Error('UNAUTHORIZED');
+        }
+      })
+      .finally(() => {
+        refreshRequests.delete(refreshEndpoint);
+      });
+
+    refreshRequests.set(refreshEndpoint, refreshRequest);
+  }
+
+  // If the key already existed, no new fetch is created; this returns the
+  // existing Promise so parallel 401 handlers all await one refresh request.
+  return refreshRequest;
+}
+
 export async function fetchWithAuth<T = any>(
   url: string,
   options: FetchWithAuthOptions = {},
@@ -53,15 +83,7 @@ export async function fetchWithAuth<T = any>(
 
   // A failed refresh means the caller should redirect or clear cached auth state.
   if (res.status === 401 && autoRefresh) {
-    const refreshRes = await fetch(refreshEndpoint, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!refreshRes.ok) {
-      // refresh fail => caller tự xử lý (redirect login, clear cache, ...)
-      throw new Error('UNAUTHORIZED');
-    }
-
+    await refreshSession(refreshEndpoint);
     res = await doFetch();
   }
 

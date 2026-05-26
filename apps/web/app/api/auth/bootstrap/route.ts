@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     return res;
   }
   const refreshRes = await fetch(`${process.env.API_EXTERNAL}/auth/refresh`, {
-    method: 'GET',
+    method: 'POST',
     headers: { Cookie: cookieHeader },
     cache: 'no-store',
   });

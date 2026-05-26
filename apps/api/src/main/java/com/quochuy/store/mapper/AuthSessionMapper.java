@@ -19,9 +19,14 @@ public interface AuthSessionMapper {
 	
 	int revoke(@Param("sessionId") UUID sessionId, @Param("revokedAt") OffsetDateTime revokedAt,
 			   @Param("reason") String reason);
+
+	int revokeAllByUserId(@Param("userId") UUID userId,
+						  @Param("revokedAt") OffsetDateTime revokedAt,
+						  @Param("reason") String reason);
 	
 	int rotateRefreshToken(
 			@Param("sessionId") UUID sessionId,
+			@Param("oldHash") String oldHash,
 			@Param("newHash") String newHash,
 			@Param("lastSeenAt") OffsetDateTime lastSeenAt,
 			@Param("ipLast") String ipLast,

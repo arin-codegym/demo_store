@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.quochuy.chat.conversation.mapper.AiConversationPairMapper">
+
+    <select id="upsertPair" resultType="java.util.UUID">
+        INSERT INTO ai_conversation_pairs (
+            conversation_id,
+            user_id,
+            assistant_code
+        ) VALUES (
+                     #{conversationId},
+                     #{userId},
+                     #{assistantCode}
+                 )
+        ON CONFLICT (user_id, assistant_code)
+        DO UPDATE SET user_id = EXCLUDED.user_id
+        RETURNING conversation_id
+    </select>
+
+</mapper>

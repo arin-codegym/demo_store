@@ -36,8 +36,7 @@ public class FavoritesServiceImpl implements FavoritesService {
 				.userId(userId)
 				.productId(productId).build();
 		
-		favoritesMapper.create(favorite);
-		return favorite.getFavoriteId();
+		return favoritesMapper.create(favorite);
 	}
 	
 	@Override

@@ -208,7 +208,7 @@ public class AuthController {
 	 * 	validate refresh token
 	 * 	tạo access token mới
 	 */
-	@GetMapping("/refresh")
+	@RequestMapping(value = "/refresh", method = {RequestMethod.GET, RequestMethod.POST})
 	public ResponseEntity<?> refreshToken(HttpServletRequest request,
 										  @CookieValue(name = "refreshToken", required = false) String refreshTokenRaw,
 										  @CookieValue(name = "sid", required = false) String sid) {
@@ -229,9 +229,8 @@ public class AuthController {
 		// 2) Verify refresh token: hash(cookie) phải match DB
 		String presentedHash = refreshTokenHasher.hash(refreshTokenRaw);
 		if (!refreshTokenHasher.constantTimeEquals(presentedHash, session.getRefreshTokenHash())) {
-			// OPTIONAL (mạnh hơn): revoke session ngay khi token sai (phòng token theft)
-			authSessionMapper.revoke(sessionId, OffsetDateTime.now(ZoneOffset.UTC),
-									 "REFRESH_TOKEN_MISMATCH");
+			// A parallel refresh can see a stale token after another request rotated it.
+			// Reject it without revoking the session.
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
 		// 3) Build Authentication từ user_id trong session (không cần username từ token)
@@ -239,12 +238,12 @@ public class AuthController {
 		// Ví dụ: userService.buildAuthenticationByUserId(session.getUserId())
 		Authentication authentication = userServiceImpl.buildAuthenticationByUserId(
 				session.getUserId());
-		Object p = authentication.getPrincipal();
-		log.info("principal class = {}", p.getClass().getName());
-		log.info("principal = {}", p);
 		if (authentication == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}
+		Object p = authentication.getPrincipal();
+		log.info("principal class = {}", p.getClass().getName());
+		log.info("principal = {}", p);
 		// 4) Rotate refresh token (cực khuyến nghị)
 		String newRefreshRaw = tokenFactory.newRefreshTokenRaw();
 		String newRefreshHash = refreshTokenHasher.hash(newRefreshRaw);
@@ -252,8 +251,8 @@ public class AuthController {
 		OffsetDateTime newExpiresAt = now.plusDays(7);
 		String ip = request.getRemoteAddr();
 		String ua = request.getHeader("User-Agent");
-		int updated = authSessionMapper.rotateRefreshToken(sessionId, newRefreshHash, now, ip, ua,
-														   newExpiresAt);
+		int updated = authSessionMapper.rotateRefreshToken(sessionId, presentedHash, newRefreshHash,
+														   now, ip, ua, newExpiresAt);
 		if (updated != 1) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 		}

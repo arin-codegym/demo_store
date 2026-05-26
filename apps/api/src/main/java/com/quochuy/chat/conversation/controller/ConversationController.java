@@ -45,7 +45,9 @@ public class ConversationController {
 	public ResponseEntity<?> ensureAdminConversation(
 			@AuthenticationPrincipal CustomUserDetails currentUser
 	) {
-		return conversationService.getAdminConversation(currentUser.getUserId());
+		UUID conversationId = conversationService.createOrGetAdminConversation(
+				currentUser.getUserId());
+		return ResponseEntity.ok(Map.of("conversationId", conversationId));
 	}
 	
 	@GetMapping("/ai/me")
@@ -54,6 +56,9 @@ public class ConversationController {
 			@AuthenticationPrincipal CustomUserDetails currentUser,
 			@RequestParam(defaultValue = "general") String assistantCode
 	) {
-		return conversationService.getAiConversation(currentUser.getUserId(),assistantCode);
+		UUID conversationId = conversationService.createOrGetAiConversation(
+				currentUser.getUserId(),
+				assistantCode);
+		return ResponseEntity.ok(Map.of("conversationId", conversationId));
 	}
 }

@@ -68,6 +68,15 @@
         AND status = 'ACTIVE'
     </update>
 
+    <update id="revokeAllByUserId">
+        UPDATE public.auth_sessions
+        SET status = 'REVOKED',
+            revoked_at = #{revokedAt},
+            revoke_reason = #{reason}
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+    </update>
+
 
     <update id="rotateRefreshToken">
         UPDATE public.auth_sessions
@@ -78,6 +87,8 @@
             expires_at = #{newExpiresAt}
         WHERE session_id = #{sessionId}
         AND status = 'ACTIVE'
+        AND expires_at > NOW()
+        AND refresh_token_hash = #{oldHash}
     </update>
 
 </mapper>

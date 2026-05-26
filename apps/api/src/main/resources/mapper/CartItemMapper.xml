@@ -21,16 +21,32 @@
     </insert>
 
     <update id="updateCartItem">
-        UPDATE cart_items
+        UPDATE cart_items ci
         SET amount     = #{amount},
             updated_at = CURRENT_TIMESTAMP
-        WHERE cart_item_id = #{cartItemId}
+        FROM carts c
+        WHERE ci.cart_id = c.cart_id
+          AND ci.cart_item_id = #{cartItemId}
+          AND c.user_id = #{userId}
+        <if test="updatedAt != null">
+          AND ci.updated_at = #{updatedAt}
+        </if>
     </update>
 
+    <select id="countCartItemByUser" resultType="int">
+        SELECT COUNT(1)
+        FROM cart_items ci
+                 JOIN carts c ON ci.cart_id = c.cart_id
+        WHERE ci.cart_item_id = #{cartItemId}
+          AND c.user_id = #{userId}
+    </select>
+
     <delete id="removeItemCard">
-        DELETE
-        FROM cart_items
-        WHERE cart_item_id = #{cartItemId}
+        DELETE FROM cart_items ci
+        USING carts c
+        WHERE ci.cart_id = c.cart_id
+          AND ci.cart_item_id = #{cartItemId}
+          AND c.user_id = #{userId}
     </delete>
 
 </mapper>

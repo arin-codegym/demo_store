@@ -12,6 +12,7 @@ import com.quochuy.store.model.EmailActivationToken;
 import com.quochuy.store.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +56,11 @@ public class RegistrationService {
 		user.setPassword(passwordEncoder.encode(request.getPassword()));
 		user.setRoles(List.of("ROLE_USER"));
 
-		userMapper.createRegisteredUser(user);
+		try {
+			userMapper.createRegisteredUser(user);
+		} catch (DuplicateKeyException exception) {
+			throw duplicateUserException(exception);
+		}
 		userRolesMapper.createRoleIsUser(userId);
 
 		String activationToken = tokenFactory.newRefreshTokenRaw();
@@ -77,13 +82,22 @@ public class RegistrationService {
 		}
 
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-		EmailActivationToken token = tokenMapper.findValidByHash(tokenHasher.hash(rawToken), now);
-		if (token == null) {
+		UUID userId = tokenMapper.markValidUsedByHash(tokenHasher.hash(rawToken), now, now);
+		if (userId == null) {
 			throw new AppException(UserErrorCode.ACTIVATION_TOKEN_INVALID);
 		}
 
-		userMapper.markEmailVerified(token.getUserId());
-		tokenMapper.markUsed(token.getTokenId(), now);
-		tokenMapper.revokeUnusedByUserId(token.getUserId(), now);
+		userMapper.markEmailVerified(userId);
+		tokenMapper.revokeUnusedByUserId(userId, now);
+	}
+
+	private AppException duplicateUserException(DuplicateKeyException exception) {
+		Throwable cause = exception.getMostSpecificCause();
+		String message = cause == null ? exception.getMessage() : cause.getMessage();
+		String lowerMessage = message == null ? "" : message.toLowerCase();
+		if (lowerMessage.contains("email")) {
+			return new AppException(UserErrorCode.EMAIL_ALREADY_EXISTS);
+		}
+		return new AppException(UserErrorCode.USERNAME_ALREADY_EXISTS);
 	}
 }

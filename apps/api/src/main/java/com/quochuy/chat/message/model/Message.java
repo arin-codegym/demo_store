@@ -17,4 +17,5 @@ public class Message {
 	private String content;
 	private MessageStatus status; // SENT / FAILED
 	private OffsetDateTime createdAt;
+	private boolean inserted;
 }

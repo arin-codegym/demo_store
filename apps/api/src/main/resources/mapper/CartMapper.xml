@@ -25,6 +25,8 @@
         <collection property="cartItems" ofType="com.quochuy.store.model.CartItem">
             <id property="cartItemId" column="cart_item_id"/>
             <result property="amount" column="amount"/>
+            <result property="createdAt" column="ci_created_at"/>
+            <result property="updatedAt" column="ci_updated_at"/>
             <result property="cartId" column="ci_cart_id"/>
             <result property="productId" column="ci_product_id"/>
 
@@ -58,6 +60,8 @@
             -- Cột bảng CartItems (Đổi tên để tránh trùng lặp)
             ci.cart_item_id,
             ci.amount,
+            ci.created_at as ci_created_at,
+            ci.updated_at as ci_updated_at,
             ci.cart_id    as ci_cart_id,
             ci.product_id as ci_product_id,
             -- Cột bảng Products
@@ -86,6 +90,8 @@
             -- Cột bảng CartItems (Đổi tên để tránh trùng lặp)
             ci.cart_item_id,
             ci.amount,
+            ci.created_at as ci_created_at,
+            ci.updated_at as ci_updated_at,
             ci.cart_id    as ci_cart_id,
             ci.product_id as ci_product_id,
             -- Cột bảng Products
@@ -97,7 +103,7 @@
         FROM public.carts c
                  LEFT JOIN public.cart_items ci ON c.cart_id = ci.cart_id
                  LEFT JOIN public.products p ON ci.product_id = p.product_id
-        WHERE c.cart_id = #{cardId}
+        WHERE c.cart_id = #{cartId}
         ORDER BY ci.created_at DESC
     </select>
 
@@ -117,11 +123,12 @@
     <insert id="createCart">
         INSERT INTO carts (user_id)
         VALUES (#{userId})
+        ON CONFLICT (user_id) DO NOTHING
     </insert>
     <delete id="clearCart">
         DELETE
-        FROM carts
-        WHERE cart_id = #{cardId}
+        FROM cart_items
+        WHERE cart_id = #{cartId}
     </delete>
 
 </mapper>

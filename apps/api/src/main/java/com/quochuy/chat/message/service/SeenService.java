@@ -22,7 +22,15 @@ public class SeenService {
 	public void markSeen(UUID currentUserId, UUID conversationId, UUID lastReadMessageId) {
 		conversationService.validateParticipant(conversationId, currentUserId);
 		
-		conversationParticipantMapper.updateLastReadMessageId(conversationId, currentUserId, lastReadMessageId);
+		int updated = conversationParticipantMapper.updateLastReadMessageId(
+				conversationId,
+				currentUserId,
+				lastReadMessageId
+		);
+		
+		if (updated == 0) {
+			return;
+		}
 		
 		eventPublisher.publishEvent(
 				new ConversationSeenEvent(conversationId, currentUserId, lastReadMessageId)

@@ -28,8 +28,7 @@ public class OrderServiceImpl implements OrderService {
 		Optional<Order> existing = orderMapper.findPendingByUserId(
 				userId);
 		if (existing.isPresent()) {
-			return new OrderDto(existing.get().getOrderId().toString(),
-								existing.get().getCartId().toString());
+			return toDto(existing.get());
 		}
 		Cart cart = cartMapper.fetchCartByUser(userId);
 		Order order = orderMapper.createOrder(
@@ -41,23 +40,33 @@ public class OrderServiceImpl implements OrderService {
 				userId,
 				cart.getCartId(),
 				key);
-		return new OrderDto(order.getOrderId().toString(),
-							cart.getCartId().toString());
+		return toDto(order);
 	}
 	
 	@Override
 	public OrderDto exitsOrder(String key) {
 		return orderMapper.findByIdempotencyKey(key)
-				.map(order -> new OrderDto(
-						order.getOrderId().toString(),
-						order.getCartId().toString()))
+				.map(this::toDto)
 				.orElseThrow(
 						() -> new IllegalStateException(
 								"Order not found for idempotency key"));
+	}
+
+	public OrderDto existingPendingOrder(UUID userId) {
+		return orderMapper.findPendingByUserId(userId)
+				.map(this::toDto)
+				.orElseThrow(
+						() -> new IllegalStateException(
+								"Pending order not found for user"));
 	}
 	
 	@Override
 	public List<Order> getPaidOrderByUserId(UUID userId) {
 		return orderMapper.findByOrderIdIsPaid(userId);
+	}
+
+	private OrderDto toDto(Order order) {
+		return new OrderDto(order.getOrderId().toString(),
+							order.getCartId().toString());
 	}
 }

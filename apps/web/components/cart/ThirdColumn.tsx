@@ -27,6 +27,7 @@ function ThirdColumn({ quantity, id }: { quantity: number; id: string }) {
       {
         cartItemId: id,
         amount: value,
+        updatedAt: item?.updatedAt,
       },
       {
         onSuccess: (data) => {
@@ -44,7 +45,7 @@ function ThirdColumn({ quantity, id }: { quantity: number; id: string }) {
   return (
     <div className='md:ml-8'>
       <SelectProductAmount
-        amount={item?.amount}
+        amount={item?.amount ?? quantity}
         setAmount={handleAmountChange}
         mode={Mode.CartItem}
         isLoading={isPending}
@@ -56,7 +57,12 @@ function ThirdColumn({ quantity, id }: { quantity: number; id: string }) {
       <Button
         className='mt-[1rem]'
         variant='destructive'
-        onClick={() => removeMutate(id)}
+        disabled={removePending}
+        onClick={() => {
+          if (!removePending) {
+            removeMutate(id);
+          }
+        }}
       >
         Remove
       </Button>

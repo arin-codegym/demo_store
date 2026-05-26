@@ -3,19 +3,29 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
+
+function createIdempotencyKey() {
+  return (
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
+}
 
 export function useCreateOrder() {
   const router = useRouter();
+  const idempotencyKeyRef = useRef<string | null>(null);
+
+  const idempotencyKey =
+    idempotencyKeyRef.current ?? createIdempotencyKey();
+  idempotencyKeyRef.current = idempotencyKey;
 
   return useMutation({
     mutationFn: async () => {
-      const key =
-        globalThis.crypto?.randomUUID?.() ??
-        `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const res = await fetch('/api/order/create', {
         method: 'POST',
         headers: {
-          'Idempotency-Key': key,
+          'Idempotency-Key': idempotencyKey,
         },
         credentials: 'include',
         // body: JSON.stringify({

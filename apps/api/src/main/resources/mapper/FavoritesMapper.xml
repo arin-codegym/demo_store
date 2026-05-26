@@ -38,7 +38,7 @@
         WHERE f.user_id = #{userId}
     </select>
 
-    <insert id="create">
+    <select id="create" resultType="java.util.UUID">
         INSERT INTO favorites (favorite_id,
                                created_at,
                                updated_at,
@@ -49,7 +49,10 @@
                 #{updatedAt},
                 #{userId},
                 #{productId})
-    </insert>
+        ON CONFLICT (user_id, product_id)
+        DO UPDATE SET updated_at = favorites.updated_at
+        RETURNING favorite_id
+    </select>
 
     <delete id="delete">
         DELETE FROM favorites

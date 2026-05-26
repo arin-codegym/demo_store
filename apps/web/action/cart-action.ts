@@ -42,21 +42,17 @@ export async function fetchCartDetails() {
 }
 
 export const removeCartItemAction = async (cartItemId: any) => {
-  try {
-    const cookieStore = await cookies();
-    const res = await fetch(`${BACKEND_URL}/cart/remove/${cartItemId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: cookieStore.toString(), // forward cookie auth
-      },
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      throw new Error('Failed to remove item');
-    }
-    return { message: 'Item removed from cart' };
-  } catch (error) {
-    // return renderError(error);
+  const cookieStore = await cookies();
+  const res = await fetch(`${BACKEND_URL}/cart/remove/${cartItemId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: cookieStore.toString(), // forward cookie auth
+    },
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to remove item');
   }
+  return { message: 'Item removed from cart' };
 };

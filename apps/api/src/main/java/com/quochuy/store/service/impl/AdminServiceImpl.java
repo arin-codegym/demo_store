@@ -52,7 +52,7 @@ public class AdminServiceImpl implements AdminService {
 			AuthState authState = userMapper.banUserReturning(userId,
 															  updateUserRequestBody.getStatus());
 			cache.setWithTtl(userId, authState, Duration.ofMinutes(1));
-			authSessionMapper.revoke(userId, OffsetDateTime.now(ZoneOffset.UTC), "BANNED");
+			authSessionMapper.revokeAllByUserId(userId, OffsetDateTime.now(ZoneOffset.UTC), "BANNED");
 		} else {
 			userMapper.updateActiveUser(userId, updateUserRequestBody.getStatus());
 		}

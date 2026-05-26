@@ -21,6 +21,10 @@ import java.util.Map;
 @RequestMapping("/api/backend")
 @RequiredArgsConstructor
 public class OrderController {
+	private static final String IDEMPOTENCY_KEY_CONSTRAINT = "uk_orders_idempotency_key";
+	private static final String LEGACY_IDEMPOTENCY_KEY_CONSTRAINT = "k_orders_idempotency_key";
+	private static final String ONE_PENDING_PER_USER_CONSTRAINT = "uk_orders_one_pending_per_user";
+	private static final String ONE_PENDING_PER_CART_CONSTRAINT = "uk_orders_one_pending_per_cart";
 	private final OrderServiceImpl orderServiceImpl;
 	private final DatabaseExceptionUtil databaseExceptionUtil;
 	
@@ -34,7 +38,6 @@ public class OrderController {
 					userDetails.getUserId(), userDetails.getEmail(), key);
 			return ResponseEntity.ok(orderDto);
 		} catch (DataIntegrityViolationException e) {
-			Throwable root = e.getRootCause();
 //				String sqlState = psql.getSQLState();  // 23505 = unique violation
 //				if ("23505".equals(
 //						sqlState) && psql.getMessage()
@@ -43,9 +46,14 @@ public class OrderController {
 //					return ResponseEntity.ok(
 //							orderService.exitsOrder(key));
 //				}
-			if (databaseExceptionUtil.isDuplicateKey(e,
-													 "uk_orders_idempotency_key")) {
+			if (databaseExceptionUtil.isDuplicateKey(e, IDEMPOTENCY_KEY_CONSTRAINT)
+					|| databaseExceptionUtil.isDuplicateKey(e, LEGACY_IDEMPOTENCY_KEY_CONSTRAINT)) {
 				return ResponseEntity.ok(orderServiceImpl.exitsOrder(key));
+			}
+			if (databaseExceptionUtil.isDuplicateKey(e, ONE_PENDING_PER_USER_CONSTRAINT)
+					|| databaseExceptionUtil.isDuplicateKey(e, ONE_PENDING_PER_CART_CONSTRAINT)) {
+				return ResponseEntity.ok(
+						orderServiceImpl.existingPendingOrder(userDetails.getUserId()));
 			}
 			throw e;
 		}

@@ -2,6 +2,7 @@ package com.quochuy.chat.conversation.mapper;
 
 import com.quochuy.chat.conversation.model.ConversationParticipant;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,12 +11,12 @@ import java.util.UUID;
 public interface ConversationParticipantMapper {
 	int insertParticipant(ConversationParticipant participant);
 	
-	boolean existsParticipant( UUID conversationId,
-						   UUID userId);
+	boolean existsParticipant(@Param("conversationId") UUID conversationId,
+							  @Param("userId") UUID userId);
 	
-	List<UUID> findUserIdsByConversationId(UUID conversationId);
+	List<UUID> findUserIdsByConversationId(@Param("conversationId") UUID conversationId);
 	
-	int updateLastReadMessageId( UUID conversationId,
-								 UUID userId,
-								 UUID lastReadMessageId);
+	int updateLastReadMessageId(@Param("conversationId") UUID conversationId,
+								@Param("userId") UUID userId,
+								@Param("lastReadMessageId") UUID lastReadMessageId);
 }

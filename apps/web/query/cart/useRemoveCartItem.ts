@@ -16,10 +16,26 @@ export function useRemoveCartItem() {
 
       const previousCart = qc.getQueryData(['cart']);
 
-      qc.setQueryData(['cart'], (old: any) => ({
-        ...old,
-        cartItems: old.cartItems.filter((i: any) => i.id !== itemId),
-      }));
+      qc.setQueryData(['cart'], (old: any) => {
+        if (!old?.cartDetails?.cartItems) return old;
+
+        const cartItems = old.cartDetails.cartItems.filter(
+          (item: any) => item.cartItemId !== itemId,
+        );
+        const numItemsInCart = cartItems.reduce(
+          (sum: number, item: any) => sum + item.amount,
+          0,
+        );
+
+        return {
+          ...old,
+          cartDetails: {
+            ...old.cartDetails,
+            cartItems,
+            numItemsInCart,
+          },
+        };
+      });
 
       return { previousCart };
     },

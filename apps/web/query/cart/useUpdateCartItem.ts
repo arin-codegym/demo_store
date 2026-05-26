@@ -5,18 +5,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 type UpdatePayload = {
   cartItemId: string;
   amount: number;
+  updatedAt?: string;
 };
 
 export function useUpdateCartItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ cartItemId, amount }: UpdatePayload) => {
+    mutationFn: async ({ cartItemId, amount, updatedAt }: UpdatePayload) => {
       const res = await fetch(`/api/cart/update-item-cart`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ cartItemId, amount }),
+        body: JSON.stringify({ cartItemId, amount, updatedAt }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Update failed');
@@ -56,6 +57,7 @@ export function useUpdateCartItem() {
       if (context?.previousCart !== undefined) {
         queryClient.setQueryData(['cart'], context.previousCart);
       }
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
 
     onSuccess: (data) => {

@@ -2,21 +2,25 @@ package com.quochuy.store.service;
 
 import com.quochuy.store.model.Cart;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface CartService {
-	Optional<Integer> countItemsByUsername(UUID userId);
+	int countItemsByUsername(UUID userId);
 	
 	Cart addProductToCart(UUID userId, UUID productId,
-						  int amount) throws Exception;
+						  int amount);
 	
 
-	void removeItemCard(UUID cartItemId);
+	boolean removeItemCard(UUID userId, UUID cartItemId);
 	
 	Optional<Cart> fetchCartDetails(UUID userId);
 	
-	void updateItemCart(UUID cartItemId, int amount);
+	CartMutationResult updateItemCart(UUID userId,
+									  UUID cartItemId,
+									  int amount,
+									  OffsetDateTime updatedAt);
 	
 	Cart findById(UUID cartId);
 	

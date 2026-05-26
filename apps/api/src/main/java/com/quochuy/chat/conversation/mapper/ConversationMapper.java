@@ -3,6 +3,7 @@ package com.quochuy.chat.conversation.mapper;
 import com.quochuy.chat.conversation.model.Conversation;
 import com.quochuy.chat.conversation.dto.ConversationSummaryResponse;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -11,15 +12,20 @@ import java.util.UUID;
 public interface ConversationMapper {
 	int insertConversation(Conversation conversation);
 	
-	Conversation findById(UUID conversationId);
+	Conversation findById(@Param("conversationId") UUID conversationId);
+
+	Conversation lockById(@Param("conversationId") UUID conversationId);
+
+	int deleteById(@Param("conversationId") UUID conversationId);
 	
-	UUID findDirectConversationIdBetweenUsers( UUID currentUserId,
-											   UUID targetUserId);
+	UUID findDirectConversationIdBetweenUsers(@Param("currentUserId") UUID currentUserId,
+											  @Param("targetUserId") UUID targetUserId);
 	
-	int updateLastMessage( UUID conversationId,
-						   UUID lastMessageId);
+	int updateLastMessage(@Param("conversationId") UUID conversationId,
+						  @Param("lastMessageId") UUID lastMessageId);
 	
-	List<ConversationSummaryResponse> findConversationSummaries(UUID currentUserId);
+	List<ConversationSummaryResponse> findConversationSummaries(@Param("currentUserId") UUID currentUserId);
 	
-	UUID findAiConversationIdByUserIdAndAssistantCode(UUID currentUserId, String assistantCode);
+	UUID findAiConversationIdByUserIdAndAssistantCode(@Param("currentUserId") UUID currentUserId,
+													  @Param("assistantCode") String assistantCode);
 }

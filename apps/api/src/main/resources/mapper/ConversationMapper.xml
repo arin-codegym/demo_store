@@ -8,6 +8,7 @@
                type="com.quochuy.chat.conversation.model.Conversation">
         <id property="conversationId" column="conversation_id"/>
         <result property="type" column="type"/>
+        <result property="assistantCode" column="assistant_code"/>
         <result property="lastMessageId" column="last_message_id"/>
         <result property="lastMessageAt" column="last_message_at"/>
         <result property="createdAt" column="created_at"/>
@@ -27,27 +28,47 @@
                 #{updatedAt})
     </insert>
 
-    <select id="findById">
+    <select id="findById" resultMap="ConversationResultMap">
         SELECT conversation_id,
                type,
                assistant_code,
+               last_message_id,
+               last_message_at,
                created_at,
                updated_at
         FROM conversations
         WHERE conversation_id = #{conversationId}
     </select>
 
-    <select id="findDirectConversationIdBetweenUsers">
+    <select id="lockById" resultMap="ConversationResultMap">
+        SELECT conversation_id,
+               type,
+               assistant_code,
+               last_message_id,
+               last_message_at,
+               created_at,
+               updated_at
+        FROM conversations
+        WHERE conversation_id = #{conversationId}
+        FOR UPDATE
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM conversations
+        WHERE conversation_id = #{conversationId}
+    </delete>
+
+    <select id="findDirectConversationIdBetweenUsers" resultType="java.util.UUID">
         SELECT c.conversation_id
         FROM conversations c
                  INNER JOIN conversation_participants cp1 ON cp1.conversation_id = c.conversation_id
                  INNER JOIN conversation_participants cp2 ON cp2.conversation_id = c.conversation_id
-        WHERE c.type = 'DIRECT'
+        WHERE c.type = 'USER_DIRECT'
           AND cp1.user_id = #{currentUserId}
           AND cp2.user_id = #{targetUserId} LIMIT 1
     </select>
 
-    <select id="findAiConversationIdByUserIdAndAssistantCode">
+    <select id="findAiConversationIdByUserIdAndAssistantCode" resultType="java.util.UUID">
         select c.conversation_id
         from conversations c
                  inner join conversation_participants cp
@@ -60,11 +81,34 @@
     </select>
 
     <update id="updateLastMessage">
-        UPDATE conversations
-        SET last_message_id = #{lastMessageId},
-            last_message_at = NOW(),
+        UPDATE conversations c
+        SET last_message_id = m_new.message_id,
+            last_message_at = m_new.created_at,
             updated_at      = NOW()
-        WHERE conversation_id = #{conversationId}
+        FROM messages m_new
+        WHERE c.conversation_id = #{conversationId}
+          AND m_new.message_id = #{lastMessageId}
+          AND m_new.conversation_id = c.conversation_id
+          AND (
+            c.last_message_id IS NULL
+            OR NOT EXISTS (
+                SELECT 1
+                FROM messages m_old
+                WHERE m_old.message_id = c.last_message_id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM messages m_old
+                WHERE m_old.message_id = c.last_message_id
+                  AND (
+                    m_new.created_at > m_old.created_at
+                    OR (
+                        m_new.created_at = m_old.created_at
+                        AND m_new.message_id > m_old.message_id
+                    )
+                  )
+            )
+          )
     </update>
 
     <select id="findConversationSummaries"

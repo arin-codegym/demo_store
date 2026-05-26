@@ -25,16 +25,19 @@
                      #{lastReadMessageId},
                      #{joinedAt}
                  )
+        ON CONFLICT (conversation_id, user_id) DO NOTHING
     </insert>
 
-    <select id="existsParticipant">
-        SELECT COUNT(*)
-        FROM conversation_participants
-        WHERE conversation_id = #{conversationId}
-          AND user_id = #{userId}
+    <select id="existsParticipant" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM conversation_participants
+            WHERE conversation_id = #{conversationId}
+              AND user_id = #{userId}
+        )
     </select>
 
-    <select id="findUserIdsByConversationId">
+    <select id="findUserIdsByConversationId" resultType="java.util.UUID">
         SELECT user_id
         FROM conversation_participants
         WHERE conversation_id = #{conversationId}
@@ -45,6 +48,32 @@
         SET last_read_message_id = #{lastReadMessageId}
         WHERE conversation_id = #{conversationId}
           AND user_id = #{userId}
+          AND last_read_message_id IS DISTINCT FROM #{lastReadMessageId}
+          AND EXISTS (
+            SELECT 1
+            FROM messages new_msg
+            WHERE new_msg.message_id = #{lastReadMessageId}
+              AND new_msg.conversation_id = conversation_participants.conversation_id
+          )
+          AND (
+            last_read_message_id IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM messages new_msg
+                         LEFT JOIN messages old_msg
+                                   ON old_msg.message_id = conversation_participants.last_read_message_id
+                WHERE new_msg.message_id = #{lastReadMessageId}
+                  AND new_msg.conversation_id = conversation_participants.conversation_id
+                  AND (
+                    old_msg.message_id IS NULL
+                    OR new_msg.created_at > old_msg.created_at
+                    OR (
+                        new_msg.created_at = old_msg.created_at
+                        AND new_msg.message_id > old_msg.message_id
+                    )
+                  )
+            )
+          )
     </update>
     <select id="countParticipant" resultType="java.lang.Integer">
         SELECT COUNT(*)

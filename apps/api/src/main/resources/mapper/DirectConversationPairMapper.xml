@@ -13,7 +13,7 @@
             LIMIT 1
     </select>
 
-    <insert id="insertPair">
+    <select id="upsertPair" resultType="java.util.UUID">
         INSERT INTO direct_conversation_pairs (
             conversation_id,
             user_1_id,
@@ -23,7 +23,10 @@
                      #{user1Id},
                      #{user2Id}
                  )
-    </insert>
+        ON CONFLICT (user_1_id, user_2_id)
+        DO UPDATE SET user_1_id = EXCLUDED.user_1_id
+        RETURNING conversation_id
+    </select>
 
     <delete id="deleteByConversationId">
         DELETE FROM direct_conversation_pairs

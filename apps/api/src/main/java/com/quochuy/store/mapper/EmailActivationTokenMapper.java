@@ -16,6 +16,12 @@ public interface EmailActivationTokenMapper {
 			@Param("now") OffsetDateTime now
 	);
 
+	UUID markValidUsedByHash(
+			@Param("tokenHash") String tokenHash,
+			@Param("usedAt") OffsetDateTime usedAt,
+			@Param("now") OffsetDateTime now
+	);
+
 	int markUsed(
 			@Param("tokenId") UUID tokenId,
 			@Param("usedAt") OffsetDateTime usedAt

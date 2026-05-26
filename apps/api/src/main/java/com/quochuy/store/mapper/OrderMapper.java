@@ -21,7 +21,7 @@ public interface OrderMapper {
 	
 	List<Order> findByOrderIdIsPaid(UUID userId);
 	
-	void updateOrderToPaid(UUID orderId);
+	UUID markPendingOrderPaid(@Param("orderId") UUID orderId);
 	
 	List<Order> getDashboardOrder();
 }

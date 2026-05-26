@@ -88,9 +88,11 @@ export async function proxyGetJson(req: NextRequest, endpoint: string) {
 }
 
 export async function proxyPatchJson(req: NextRequest, endpoint: string) {
+  const payload = await req.json();
   return proxyJson({
     req,
     endpoint,
     method: 'PATCH',
+    body: payload,
   });
 }

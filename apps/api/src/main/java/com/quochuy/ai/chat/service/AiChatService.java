@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -49,6 +50,7 @@ public class AiChatService {
 	
 
 	@Async
+	@Transactional
 	public void generateReply(UUID conversationId, UUID userMessageId) {
 		// Load persisted state after the message-created transaction has committed.
 		/*Lây ra tin nhắn gần nhất => câu hỏi*/
@@ -57,7 +59,7 @@ public class AiChatService {
 			log.warn("AI skipped: user message not found, messageId={}", userMessageId);
 			return;
 		}
-		Conversation conversation = conversationMapper.findById(conversationId);
+		Conversation conversation = conversationMapper.lockById(conversationId);
 		if (conversation == null) {
 			log.warn("AI skipped: conversation not found, conversationId={}", conversationId);
 			return;

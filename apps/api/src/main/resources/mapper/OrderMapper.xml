@@ -47,11 +47,13 @@
         WHERE status = 'PAID'
     </select>
 
-    <update id="updateOrderToPaid">
+    <select id="markPendingOrderPaid" resultType="java.util.UUID">
         UPDATE orders
         SET status = 'PAID'
-        WHERE order_id = #{oderId}
-    </update>
+        WHERE order_id = #{orderId}
+          AND status = 'PENDING'
+        RETURNING cart_id
+    </select>
 
     <delete id="deleteOrderIsPaid">
         DELETE

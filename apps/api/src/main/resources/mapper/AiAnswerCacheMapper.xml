@@ -57,6 +57,12 @@
                      #{lastUsedAt},
                      #{expiredAt}
                  )
+        on conflict (assistant_code, normalized_question)
+        do update set
+            answer_text = excluded.answer_text,
+            source = excluded.source,
+            last_used_at = excluded.last_used_at,
+            expired_at = excluded.expired_at
     </insert>
 
     <update id="increaseHitCount">

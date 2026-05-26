@@ -40,11 +40,6 @@ public class MessageService {
 	public MessageResponse sendMessage(UUID currentUserId, UUID conversationId,
 									   String clientMessageId, String content) {
 		conversationService.validateParticipant(conversationId, currentUserId);
-		Message existed = messageMapper.findBySenderAndClientMessageId(currentUserId,
-																	   clientMessageId);
-		if (existed != null) {
-			return toResponse(existed);
-		}
 		Message message = new Message();
 		message.setMessageId(UUID.randomUUID());
 		message.setConversationId(conversationId);
@@ -54,13 +49,15 @@ public class MessageService {
 		message.setContent(content);
 		message.setStatus(MessageStatus.SENT);
 		message.setCreatedAt(OffsetDateTime.now());
-		messageMapper.insertMessage(message);
-		conversationMapper.updateLastMessage(conversationId, message.getMessageId());
-		conversationParticipantMapper.updateLastReadMessageId(conversationId,currentUserId,
-															  message.getMessageId());
-		eventPublisher.publishEvent(
-				new MessageCreatedEvent(message.getMessageId(), conversationId, currentUserId, false));
-		return toResponse(message);
+		Message savedMessage = messageMapper.upsertUserMessage(message);
+		if (savedMessage.isInserted()) {
+			conversationMapper.updateLastMessage(conversationId, savedMessage.getMessageId());
+			conversationParticipantMapper.updateLastReadMessageId(conversationId,currentUserId,
+																  savedMessage.getMessageId());
+			eventPublisher.publishEvent(
+					new MessageCreatedEvent(savedMessage.getMessageId(), conversationId, currentUserId, false));
+		}
+		return toResponse(savedMessage);
 	}
 	
 	public List<MessageResponse> getMessages(UUID currentUserId, UUID conversationId, UUID beforeMessageId,

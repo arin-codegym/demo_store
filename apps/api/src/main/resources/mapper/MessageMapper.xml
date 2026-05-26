@@ -8,10 +8,12 @@
         <id property="messageId" column="message_id"/>
         <result property="conversationId" column="conversation_id"/>
         <result property="senderUserId" column="sender_user_id"/>
+        <result property="senderType" column="sender_type"/>
         <result property="clientMessageId" column="client_message_id"/>
         <result property="content" column="content"/>
         <result property="status" column="status"/>
         <result property="createdAt" column="created_at"/>
+        <result property="inserted" column="inserted"/>
     </resultMap>
 
     <insert id="insertMessage">
@@ -34,10 +36,43 @@
                 )
     </insert>
 
-    <select id="findById">
+    <select id="upsertUserMessage" parameterType="com.quochuy.chat.message.model.Message"
+            resultMap="MessageResultMap">
+        INSERT INTO messages (message_id,
+                              conversation_id,
+                              sender_user_id,
+                              sender_type,
+                              client_message_id,
+                              content,
+                              status,
+                              created_at)
+        VALUES (#{messageId},
+                #{conversationId},
+                #{senderUserId},
+                #{senderType},
+                #{clientMessageId},
+                #{content},
+                #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler}::message_status,
+                #{createdAt}
+               )
+        ON CONFLICT (sender_user_id, client_message_id)
+        DO UPDATE SET client_message_id = EXCLUDED.client_message_id
+        RETURNING message_id,
+                  conversation_id,
+                  sender_user_id,
+                  sender_type,
+                  client_message_id,
+                  content,
+                  status,
+                  created_at,
+                  (xmax = 0) AS inserted
+    </select>
+
+    <select id="findById" resultMap="MessageResultMap">
         SELECT message_id,
                conversation_id,
                sender_user_id,
+               sender_type,
                client_message_id,
                content,
                status,
@@ -46,7 +81,7 @@
         WHERE message_id = #{messageId} LIMIT 1
     </select>
 
-    <select id="findRecentMessages" >
+    <select id="findRecentMessages" resultMap="MessageResultMap">
         select *
         from (
                  select
@@ -66,7 +101,7 @@
         order by created_at asc
     </select>
 
-    <select id="findRecentUserMessages" >
+    <select id="findRecentUserMessages" resultMap="MessageResultMap">
         SELECT *
         FROM (
                  SELECT
@@ -87,11 +122,12 @@
         ORDER BY created_at ASC
     </select>
 
-    <select id="findMessagesByConversationId" >
+    <select id="findMessagesByConversationId" resultMap="MessageResultMap">
         SELECT
         m.message_id,
         m.conversation_id,
         m.sender_user_id,
+        m.sender_type,
         m.client_message_id,
         m.content,
         m.status,
@@ -121,10 +157,11 @@
         LIMIT #{limit}
     </select>
 
-    <select id="findBySenderAndClientMessageId">
+    <select id="findBySenderAndClientMessageId" resultMap="MessageResultMap">
         SELECT message_id,
                conversation_id,
                sender_user_id,
+               sender_type,
                client_message_id,
                content,
                status,
