@@ -7,20 +7,31 @@ import { renderError } from '@/lib/error';
 import { reviewSchema, validateWithZodSchema } from '@/utils/schemas';
 
 export const findExistingReview = async (productId: string) => {
-  const cookie = (await cookies()) || '';
-  const accessToken = cookie.get('accessToken')?.value || '';
+  const cookieStore = await cookies();
+  const headerList = await headers();
+  const hasSession =
+    !!cookieStore.get('accessToken')?.value ||
+    !!cookieStore.get('refreshToken')?.value;
+
+  if (!hasSession) {
+    return null;
+  }
+
   try {
     const url = `${process.env.API_EXTERNAL}/review/review-does-not-exist/${productId}`;
-    const { response, setCookie } = await fetchWithAuthServer(url, {
+    const { response } = await fetchWithAuthServer(url, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      cookieHeader: headerList.get('cookie'),
+      signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) return null;
-    return response;
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json().catch(() => null);
+    return Boolean(data?.exists);
   } catch (err) {
     console.log(err);
+    return null;
   }
 };
 

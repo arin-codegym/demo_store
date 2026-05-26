@@ -2,6 +2,7 @@ package com.quochuy.redis.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quochuy.redis.dto.AuthState;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +10,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class AuthStateCache {
 	private static final Duration TTL = Duration.ofMinutes(5);
 	private final StringRedisTemplate redis;
@@ -29,6 +31,7 @@ public class AuthStateCache {
 			if (json == null) return null;
 			return om.readValue(json, AuthState.class);
 		} catch (Exception e) {
+			log.warn("Failed to read auth state cache for user {}: {}", userId, e.getMessage());
 			return null; // fail-open cache layer
 		}
 	}
@@ -37,13 +40,17 @@ public class AuthStateCache {
 		try {
 			String json = om.writeValueAsString(state);
 			redis.opsForValue().set(key(userId), json, TTL);
-		} catch (Exception ignored) {}
+		} catch (Exception e) {
+			log.warn("Failed to write auth state cache for user {}: {}", userId, e.getMessage());
+		}
 	}
 	// (optional) khi muốn “tức thì”: ban/unban/update ver rồi set lại Redis
 	public void setWithTtl(UUID userId, AuthState state, Duration ttl) {
 		try {
 			redis.opsForValue().set(key(userId), om.writeValueAsString(state), ttl);
-		} catch (Exception ignored) {}
+		} catch (Exception e) {
+			log.warn("Failed to write auth state cache for user {}: {}", userId, e.getMessage());
+		}
 	}
 	public void delete(UUID userId) {
 		redis.delete(key(userId));

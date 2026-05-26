@@ -28,8 +28,8 @@ public class ReviewController {
 		//		}
 		// Bây giờ bạn có thể gọi getUserId() trực tiếp vì đã khai báo đúng kiểu CustomUserDetails
 		UUID userId = userDetails.getUserId();
-		boolean check = reviewServiceImpl.reviewDoesNotExits(userId, productId);
-		return ResponseEntity.ok(Map.of("exits", check));
+		boolean exists = reviewServiceImpl.reviewDoesNotExits(userId, productId);
+		return ResponseEntity.ok(Map.of("exists", exists));
 	}
 	
 	@GetMapping("/fetchProductRating/{productId}")

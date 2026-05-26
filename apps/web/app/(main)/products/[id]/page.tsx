@@ -14,9 +14,7 @@ async function SingleProductPage({ params }: { params: { id: string } }) {
   const { product } = await fetchSingleProduct(param.id);
   const { name, image, company, description, price } = product;
   const dollarsAmount = formatCurrency(price);
-  const res = await findExistingReview(product.productId);
-  const bl = await res?.json();
-  const exists = (await bl?.exists) ?? false; // nếu undefined/null -> false
+  const exists = (await findExistingReview(product.productId)) ?? false;
   const reviewDoesNotExist = !exists;
 
   return (

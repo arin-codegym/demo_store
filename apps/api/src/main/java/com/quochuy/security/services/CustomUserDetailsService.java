@@ -31,7 +31,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 		if (user == null) {
 			throw new UsernameNotFoundException("Không tìm thấy người dùng: " + username);
 		}
-		log.info("dbHash={}", user.getPassword());
 		// Chuyển List<String> roles từ DB thành List<SimpleGrantedAuthority> cho Spring
 		List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
 				.map(SimpleGrantedAuthority::new).collect(Collectors.toList());

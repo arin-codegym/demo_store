@@ -1,12 +1,14 @@
 package com.quochuy.common.exception;
 
 import com.quochuy.common.response.ErrorResponse;
+import com.quochuy.common.exception.enums.AuthErrorCode;
 import com.quochuy.common.exception.enums.DatabaseErrorCode;
 import com.quochuy.common.exception.enums.SystemErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.exceptions.PersistenceException;
 import org.mybatis.spring.MyBatisSystemException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataAccessException;
@@ -77,6 +79,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(AppException.class)
 	public ResponseEntity<ErrorResponse> handleAppException(AppException exception) {
 		return buildResponse(exception.getErrorCode());
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+		log.warn("Access denied: {}", exception.getMessage());
+		return buildResponse(AuthErrorCode.ACCESS_DENIED);
 	}
 	
 	@ExceptionHandler(MethodArgumentNotValidException.class)
