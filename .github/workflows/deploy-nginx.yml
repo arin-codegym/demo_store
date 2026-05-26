@@ -1,0 +1,72 @@
+name: Deploy Nginx App
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_node_private_ip:
+        description: Private IPv4 of the backend-only EC2 node
+        required: true
+        default: 172.31.15.246
+
+jobs:
+  deploy_nginx:
+    name: Deploy app EC2 Nginx config
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout deploy files
+        uses: actions/checkout@v4
+
+      - name: Prepare Nginx deploy directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: mkdir -p /home/ubuntu/nginx
+
+      - name: Copy Nginx template to app EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: infra/nginx/app.conf.template
+          target: /home/ubuntu/nginx
+          strip_components: 2
+
+      - name: Render, test, and reload Nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            BACKEND_NODE_PRIVATE_IP="${{ github.event.inputs.backend_node_private_ip }}"
+            case "$BACKEND_NODE_PRIVATE_IP" in
+              ''|*[!0-9.]*)
+                echo "Invalid backend_node_private_ip: $BACKEND_NODE_PRIVATE_IP"
+                exit 1
+                ;;
+            esac
+
+            cd /home/ubuntu/nginx
+            sed "s|__BACKEND_NODE_PRIVATE_IP__|${BACKEND_NODE_PRIVATE_IP}|g" app.conf.template > app.conf
+
+            backup="/etc/nginx/sites-available/app.bak.$(date +%Y%m%d%H%M%S)"
+            sudo cp /etc/nginx/sites-available/app "$backup"
+            sudo cp app.conf /etc/nginx/sites-available/app
+
+            if sudo nginx -t; then
+              sudo systemctl reload nginx
+              echo "Nginx reloaded with backend node ${BACKEND_NODE_PRIVATE_IP}"
+            else
+              echo "Nginx config test failed. Restoring backup: $backup"
+              sudo cp "$backup" /etc/nginx/sites-available/app
+              sudo nginx -t
+              exit 1
+            fi
+
+            sudo nginx -T 2>/dev/null | grep -n -A3 "upstream backend_nodes"
