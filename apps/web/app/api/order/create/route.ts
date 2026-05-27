@@ -1,33 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { buildBackendProxyHeaders } from '@/lib/api/backend-proxy-headers';
 
 const BACKEND_URL = process.env.API_EXTERNAL;
+const REQUEST_TIMEOUT_MS = 15000;
+
+function jsonResponse(body: unknown, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. lấy payload từ client
-    // const body = await req.json();
-    // 2. lấy cookie access token từ browser gửi lên
-    const cookieHeader = req.headers.get('cookie');
+    if (!BACKEND_URL) {
+      return jsonResponse({ message: 'Backend URL is not configured' }, 500);
+    }
+
     const key = req.headers.get('idempotency-key');
-    // 3. call sang backend thật
+    const headers = buildBackendProxyHeaders(req);
+    if (key) headers.set('Idempotency-Key', key);
+
     const backendRes = await fetch(`${BACKEND_URL}/order/create`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Idempotency-Key': key || '',
-        Cookie: cookieHeader || '',
-      },
-      // body: JSON.stringify(body),
+      headers,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      cache: 'no-store',
     });
     const text = await backendRes.text();
-    // 4. nếu backend trả lỗi
+
     if (!backendRes.ok) {
-      return NextResponse.json(
+      return jsonResponse(
         {
           message: text || 'Create order failed',
           backendStatus: backendRes.status,
         },
-        { status: backendRes.status },
+        backendRes.status,
       );
     }
 
@@ -38,13 +48,14 @@ export async function POST(req: NextRequest) {
       data = { text };
     }
 
-    return NextResponse.json(data);
+    return jsonResponse(data);
   } catch (error) {
     console.error('API /order/create error:', error);
 
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 },
-    );
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      return jsonResponse({ message: 'Create order request timed out' }, 504);
+    }
+
+    return jsonResponse({ message: 'Internal server error' }, 500);
   }
 }
