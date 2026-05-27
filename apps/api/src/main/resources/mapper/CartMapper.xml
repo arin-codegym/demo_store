@@ -108,8 +108,9 @@
     </select>
 
     <select id="countItemsByUsername" resultType="int">
-        SELECT c.num_items_in_cart
+        SELECT COALESCE(SUM(ci.amount), 0)::int
         FROM carts c
+                 LEFT JOIN cart_items ci ON ci.cart_id = c.cart_id
         WHERE c.user_id = CAST(#{userId} AS UUID)
     </select>
 
@@ -125,10 +126,19 @@
         VALUES (#{userId})
         ON CONFLICT (user_id) DO NOTHING
     </insert>
-    <delete id="clearCart">
-        DELETE
-        FROM cart_items
+    <update id="clearCart">
+        WITH deleted AS (
+            DELETE
+            FROM cart_items
+            WHERE cart_id = #{cartId}
+        )
+        UPDATE carts
+        SET num_items_in_cart = 0,
+            cart_total        = 0,
+            shipping          = 0,
+            tax               = 0,
+            order_total       = 0
         WHERE cart_id = #{cartId}
-    </delete>
+    </update>
 
 </mapper>

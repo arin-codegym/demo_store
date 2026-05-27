@@ -25,6 +25,11 @@ async function OrdersPage({
   });
 
   const dehydratedState = dehydrate(queryClient);
-  return <OrdersClient dehydratedState={dehydratedState} />;
+  return (
+    <OrdersClient
+      dehydratedState={dehydratedState}
+      paymentSessionId={sessionId ?? null}
+    />
+  );
 }
 export default OrdersPage;

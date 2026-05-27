@@ -1,4 +1,14 @@
 'use client';
+
+import SectionTitle from '@/components/global/SectionTitle';
+import {
+  HydrationBoundary,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { fetchWithAuth } from '@/lib/fetchWithAuth.client';
+import { formatCurrency, formatDate } from '@/utils/format';
+import { useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -8,21 +18,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import SectionTitle from '@/components/global/SectionTitle';
-import { HydrationBoundary, useQuery } from '@tanstack/react-query';
-import { fetchWithAuth } from '@/lib/fetchWithAuth.client';
-import { formatCurrency, formatDate } from '@/utils/format';
-function OrdersClient({ dehydratedState }: any) {
+
+function OrdersClient({
+  dehydratedState,
+  paymentSessionId,
+}: {
+  dehydratedState: any;
+  paymentSessionId?: string | null;
+}) {
   return (
-    /* phải tách ra như thế này vì HydrationBoundary phải bọc useQuery 
-    tức là useQuery nằm trong context của HydrationBoundary (nằm trong component child)  */
     <HydrationBoundary state={dehydratedState}>
-      <OrdersContent />
+      <OrdersContent paymentSessionId={paymentSessionId} />
     </HydrationBoundary>
   );
 }
-function OrdersContent() {
-  const { data: orders, isLoading } = useQuery({
+
+function OrdersContent({
+  paymentSessionId,
+}: {
+  paymentSessionId?: string | null;
+}) {
+  const queryClient = useQueryClient();
+  const { data: orders = [], isLoading } = useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
       const res = await fetchWithAuth('/api/order', {
@@ -32,9 +49,17 @@ function OrdersContent() {
         return [];
       }
       const data = await res.json();
-      return data.orders;
+      return data.orders ?? [];
     },
   });
+
+  useEffect(() => {
+    if (!paymentSessionId) return;
+
+    void queryClient.invalidateQueries({ queryKey: ['cart-count'] });
+    void queryClient.invalidateQueries({ queryKey: ['cart'] });
+    void queryClient.invalidateQueries({ queryKey: ['orders'] });
+  }, [paymentSessionId, queryClient]);
 
   if (isLoading) return <div>Loading...</div>;
 
