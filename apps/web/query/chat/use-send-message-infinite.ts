@@ -7,7 +7,14 @@ import {
 } from '@tanstack/react-query';
 import { queryKeys } from '../query-keys';
 
-function appendToFirstPage(
+function isSameMessage(left: Message, right: Message) {
+  return (
+    left.messageId === right.messageId ||
+    (!!left.clientMessageId && left.clientMessageId === right.clientMessageId)
+  );
+}
+
+function upsertInFirstPage(
   old: InfiniteData<Message[]> | undefined,
   message: Message,
 ): InfiniteData<Message[]> {
@@ -18,7 +25,35 @@ function appendToFirstPage(
     };
   }
 
-  const pages = [...old.pages];
+  let replaced = false;
+  const pages = old.pages.map((page) => {
+    const nextPage: Message[] = [];
+
+    for (const existingMessage of page) {
+      if (!isSameMessage(existingMessage, message)) {
+        nextPage.push(existingMessage);
+        continue;
+      }
+
+      if (!replaced) {
+        replaced = true;
+        nextPage.push({
+          ...existingMessage,
+          ...message,
+          isTemp: false,
+        });
+      }
+    }
+
+    return nextPage;
+  });
+
+  if (replaced) {
+    return {
+      ...old,
+      pages,
+    };
+  }
 
   if (pages.length === 0) {
     return {
@@ -64,7 +99,7 @@ export function useSendMessageInfinite(currentUserId?: string) {
 
       queryClient.setQueryData<InfiniteData<Message[]> | undefined>(
         queryKey,
-        (old) => appendToFirstPage(old, optimisticMessage),
+        (old) => upsertInFirstPage(old, optimisticMessage),
       );
 
       return { previousData, queryKey };
@@ -88,35 +123,7 @@ export function useSendMessageInfinite(currentUserId?: string) {
             };
           }
 
-          let replaced = false;
-
-          const pages = old.pages.map((page) =>
-            page.map((message) => {
-              if (message.clientMessageId === savedMessage.clientMessageId) {
-                replaced = true;
-                return {
-                  ...savedMessage,
-                  isTemp: false,
-                };
-              }
-              return message;
-            }),
-          );
-
-          if (!replaced) {
-            return appendToFirstPage(
-              {
-                ...old,
-                pages,
-              },
-              savedMessage,
-            );
-          }
-
-          return {
-            ...old,
-            pages,
-          };
+          return upsertInFirstPage(old, savedMessage);
         },
       );
     },

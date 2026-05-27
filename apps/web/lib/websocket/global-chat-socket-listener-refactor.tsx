@@ -382,29 +382,38 @@ function upsertMessageInInfiniteCache(
     };
   }
 
-  const exists = old.pages.some((page) =>
-    page.some((message) => message.messageId === incoming.messageId),
-  );
+  let replaced = false;
 
-  // Replace a temporary optimistic message with the backend-confirmed version.
-  if (exists) {
+  const pages = old.pages.map((page) => {
+    const nextPage: Message[] = [];
+
+    for (const message of page) {
+      if (!isSameMessage(message, incoming)) {
+        nextPage.push(message);
+        continue;
+      }
+
+      if (!replaced) {
+        replaced = true;
+        nextPage.push({
+          ...message,
+          ...incoming,
+          isTemp: false,
+        });
+      }
+    }
+
+    return nextPage;
+  });
+
+  // Replace a temporary optimistic message with the backend-confirmed version,
+  // and collapse duplicate socket/mutation copies of the same client message.
+  if (replaced) {
     return {
       ...old,
-      pages: old.pages.map((page) =>
-        page.map((message) =>
-          message.messageId === incoming.messageId
-            ? {
-                ...message,
-                ...incoming,
-                isTemp: false,
-              }
-            : message,
-        ),
-      ),
+      pages,
     };
   }
-
-  const pages = [...old.pages];
 
   if (pages.length === 0) {
     return {
@@ -420,4 +429,11 @@ function upsertMessageInInfiniteCache(
     ...old,
     pages,
   };
+}
+
+function isSameMessage(left: Message, right: Message) {
+  return (
+    left.messageId === right.messageId ||
+    (!!left.clientMessageId && left.clientMessageId === right.clientMessageId)
+  );
 }
