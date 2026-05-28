@@ -30,7 +30,7 @@ function SearchInput() {
     <Input
       type='search'
       placeholder='search product...'
-      className='max-w-xs dark:bg-muted '
+      className='w-full dark:bg-muted sm:max-w-xs'
       onChange={(e) => {
         setSearch(e.target.value);
         handleSearch(e.target.value);

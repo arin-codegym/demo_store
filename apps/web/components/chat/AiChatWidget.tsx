@@ -132,18 +132,18 @@ export function AiChatWidget({
   const isSending = sendMessageMutation.isPending;
   const showAiProcessing = isSending || awaitingAiReply || isFetching;
   return (
-    <div className='fixed bottom-4 right-4 z-50 flex h-[600px] w-[380px] flex-col overflow-hidden rounded-xl border bg-white shadow-2xl'>
-      <div className='flex items-center justify-between border-b px-4 py-3'>
-        <div>
+    <div className='fixed inset-x-3 bottom-3 z-50 flex h-[min(620px,calc(100svh-7.5rem))] flex-col overflow-hidden rounded-lg border bg-white shadow-2xl sm:inset-x-auto sm:bottom-4 sm:right-4 sm:h-[600px] sm:w-[380px] sm:rounded-xl'>
+      <div className='flex shrink-0 items-center justify-between gap-3 border-b px-3 py-3 sm:px-4'>
+        <div className='min-w-0'>
           <div className='font-semibold'>Trợ lý AI</div>
           <div className='text-sm text-slate-500'>Hỏi đáp nhanh</div>
         </div>
 
-        <div className='flex items-center gap-2'>
+        <div className='flex shrink-0 items-center gap-2'>
           <button
             type='button'
             onClick={onOpenInMain}
-            className='rounded border px-2 py-1 text-sm'
+            className='whitespace-nowrap rounded border px-2 py-1 text-sm'
           >
             Mở lớn
           </button>
@@ -151,7 +151,7 @@ export function AiChatWidget({
           <button
             type='button'
             onClick={onClose}
-            className='rounded border px-2 py-1 text-sm'
+            className='whitespace-nowrap rounded border px-2 py-1 text-sm'
           >
             Đóng
           </button>
@@ -174,20 +174,20 @@ export function AiChatWidget({
         />
       </div>
 
-      <div className='border-t p-3'>
+      <div className='shrink-0 border-t p-2 sm:p-3'>
         <form onSubmit={handleSubmit} className='flex gap-2'>
           <input
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder='Nhập câu hỏi cho AI...'
             disabled={sendMessageMutation.isPending}
-            className='flex-1 rounded border px-3 py-2 text-sm outline-none'
+            className='min-w-0 flex-1 rounded border px-3 py-2 text-sm outline-none'
           />
 
           <button
             type='submit'
             disabled={sendMessageMutation.isPending || !content.trim()}
-            className='rounded border px-3 py-2 text-sm disabled:opacity-50'
+            className='shrink-0 rounded border px-3 py-2 text-sm disabled:opacity-50'
           >
             {sendMessageMutation.isPending ? 'Đang gửi...' : 'Gửi'}
           </button>

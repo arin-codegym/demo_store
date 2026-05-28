@@ -15,18 +15,23 @@ type NavbarProps = {
 function Navbar({ showSearch = true }: NavbarProps) {
   const { data: user, isLoading, status } = useCurrentUser();
   return (
-    <nav className='border-b '>
-      <Container className='flex flex-col sm:flex-row  sm:justify-between sm:items-center flex-wrap gap-4 py-8'>
-        <Logo />
-        {showSearch ? (
-          <Suspense>
-            <NavSearch />
-          </Suspense>
-        ) : (
-          <div />
-        )}
+    <nav className='border-b bg-background'>
+      <Container className='flex flex-col gap-4 px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-8 sm:py-8'>
+        <div className='flex items-center justify-between sm:block'>
+          <Logo />
+        </div>
 
-        <div className='flex gap-4 items-center '>
+        <div className='w-full sm:w-auto sm:flex-1 sm:px-4 lg:max-w-md lg:px-0'>
+          {showSearch ? (
+            <Suspense>
+              <NavSearch />
+            </Suspense>
+          ) : (
+            <div />
+          )}
+        </div>
+
+        <div className='flex items-center justify-center gap-3 sm:justify-end sm:gap-4'>
           <NotificationBell />
           <UserProvider user={user}>
             {showSearch ? <CartButton /> : <div />}

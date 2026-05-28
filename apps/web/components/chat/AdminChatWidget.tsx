@@ -80,25 +80,25 @@ export function AdminChatWidget({
   };
 
   return (
-    <div className='fixed bottom-20 right-4 z-50 flex h-[520px] w-[360px] flex-col overflow-hidden rounded-2xl border bg-white shadow-2xl'>
-      <div className='flex h-14 shrink-0 items-center justify-between border-b px-4'>
-        <div>
+    <div className='fixed inset-x-3 bottom-3 z-50 flex h-[min(560px,calc(100svh-7.5rem))] flex-col overflow-hidden rounded-lg border bg-white shadow-2xl sm:inset-x-auto sm:bottom-20 sm:right-4 sm:h-[520px] sm:w-[360px] sm:rounded-2xl'>
+      <div className='flex h-16 shrink-0 items-center justify-between gap-3 border-b px-3 sm:h-14 sm:px-4'>
+        <div className='min-w-0'>
           <div className='font-semibold'>Admin Support</div>
           <div className='text-xs text-slate-500'>Liên hệ hỗ trợ</div>
         </div>
 
-        <div className='flex items-center gap-2'>
+        <div className='flex shrink-0 items-center gap-2'>
           <button
             type='button'
             onClick={onOpenInMain}
-            className='rounded-lg border px-2 py-1 text-xs'
+            className='whitespace-nowrap rounded-lg border px-2 py-1 text-xs'
           >
             Mở lớn
           </button>
           <button
             type='button'
             onClick={onClose}
-            className='rounded-lg border px-2 py-1 text-xs'
+            className='whitespace-nowrap rounded-lg border px-2 py-1 text-xs'
           >
             Đóng
           </button>
@@ -119,13 +119,13 @@ export function AdminChatWidget({
         />
       </div>
 
-      <form onSubmit={handleSubmit} className='shrink-0 border-t p-3'>
+      <form onSubmit={handleSubmit} className='shrink-0 border-t p-2 sm:p-3'>
         <div className='flex items-end gap-2'>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder='Nhập nội dung hỗ trợ...'
-            className='min-h-[44px] max-h-28 flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none'
+            className='min-h-[44px] max-h-28 min-w-0 flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none'
           />
           <button
             type='submit'

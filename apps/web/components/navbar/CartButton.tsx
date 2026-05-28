@@ -12,7 +12,7 @@ function CartButton() {
   const count = typeof data === 'number' ? data : 0;
 
   if (isUserLoading || isLoading) {
-    return <div className='w-10 h-10 bg-gray-100 animate-pulse rounded-md' />;
+    return <div className='h-9 w-9 animate-pulse rounded-md bg-gray-100 sm:h-10 sm:w-10' />;
   }
 
   return (
@@ -20,11 +20,11 @@ function CartButton() {
       asChild
       variant='outline'
       size='icon'
-      className='flex justify-center items-center relative'
+      className='relative flex h-9 w-9 items-center justify-center sm:h-10 sm:w-10'
     >
       <Link href='/cart'>
         <LuShoppingCart />
-        <span className='absolute -top-3 -right-3 bg-primary text-white rounded-full h-6 w-6 flex items-center justify-center text-xs'>
+        <span className='absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs text-white sm:-right-3 sm:-top-3 sm:h-6 sm:min-w-6'>
           {count}
         </span>
       </Link>

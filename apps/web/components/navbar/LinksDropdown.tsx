@@ -45,8 +45,8 @@ function LinksDropdown() {
     return (
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <Button variant='outline' className='flex gap-4 max-w-[100px]'>
-            <LuAlignLeft className='w-6 h-6' />
+          <Button variant='outline' className='flex h-9 gap-2 px-3 sm:h-10 sm:max-w-[100px] sm:gap-4'>
+            <LuAlignLeft className='h-5 w-5 sm:h-6 sm:w-6' />
             <UserIcon />
           </Button>
         </DropdownMenuTrigger>
@@ -71,8 +71,8 @@ function LinksDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant='outline' className='flex gap-4 max-w-[100px]'>
-          <LuAlignLeft className='w-6 h-6' />
+        <Button variant='outline' className='flex h-9 gap-2 px-3 sm:h-10 sm:max-w-[100px] sm:gap-4'>
+          <LuAlignLeft className='h-5 w-5 sm:h-6 sm:w-6' />
           <Suspense>
             <UserIcon />
           </Suspense>

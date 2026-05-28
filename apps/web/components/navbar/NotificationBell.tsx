@@ -22,7 +22,7 @@ export function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant='ghost' size='icon' className='relative'>
+        <Button variant='ghost' size='icon' className='relative h-9 w-9 sm:h-10 sm:w-10'>
           <Bell className='h-5 w-5' />
           <span className='sr-only'>Mở thông báo</span>
 
