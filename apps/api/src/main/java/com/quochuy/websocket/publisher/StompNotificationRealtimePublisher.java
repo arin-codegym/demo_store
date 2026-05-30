@@ -1,64 +1,65 @@
 package com.quochuy.websocket.publisher;
 
-import com.quochuy.notification.realtime.NotificationRealtimePublisher;
+import com.quochuy.notification.event.NotificationCreatedEvent;
+import com.quochuy.notification.event.NotificationMarkAllAsReadEvent;
+import com.quochuy.notification.event.NotificationMarkAsReadEvent;
 import com.quochuy.websocket.dto.WsEnvelope;
-import com.quochuy.notification.dto.NotificationDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class StompNotificationRealtimePublisher implements NotificationRealtimePublisher {
+public class StompNotificationRealtimePublisher {
 	private final SimpMessagingTemplate messagingTemplate;
-	@Override
-	public void publishCreated(UUID recipientUserId, NotificationDto notification) {
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	public void publishCreated(NotificationCreatedEvent notificationCreatedEvent) {
 		WsEnvelope envelope = new WsEnvelope(
 				"notification.created",
-				Map.of("notification", notification)
+				Map.of("notification", notificationCreatedEvent.notification())
 		);
 		
 		messagingTemplate.convertAndSendToUser(
-				recipientUserId.toString(),
+				notificationCreatedEvent.recipientUserId().toString(),
 				"/queue/notifications",
 				envelope
 		);
 	}
 	
-	@Override
-	public void publishRead(UUID recipientUserId, UUID notificationId, OffsetDateTime readAt) {
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	public void publishRead(NotificationMarkAsReadEvent notificationMarkAsReadEvent) {
 		WsEnvelope envelope = new WsEnvelope(
 				"notification.read",
 				Map.of(
-						"notificationId", notificationId,
-						"userId", recipientUserId,
-						"readAt", readAt
+						"notificationId", notificationMarkAsReadEvent.notificationId(),
+						"userId", notificationMarkAsReadEvent.recipientUserId(),
+						"readAt", notificationMarkAsReadEvent.readAt()
 				)
 		);
 		
 		messagingTemplate.convertAndSendToUser(
-				recipientUserId.toString(),
+				notificationMarkAsReadEvent.recipientUserId().toString(),
 				"/queue/notifications",
 				envelope
 		);
 	}
 	
-	@Override
-	public void publishReadAll(UUID recipientUserId, OffsetDateTime readAt) {
+	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	public void publishReadAll(NotificationMarkAllAsReadEvent notificationMarkAllAsReadEvent) {
 		WsEnvelope envelope = new WsEnvelope(
 				"notification.read-all",
 				Map.of(
-						"userId", recipientUserId,
-						"readAt", readAt
+						"userId", notificationMarkAllAsReadEvent.recipientUserId(),
+						"readAt", notificationMarkAllAsReadEvent.readAt()
 				)
 		);
 		
 		messagingTemplate.convertAndSendToUser(
-				recipientUserId.toString(),
+				notificationMarkAllAsReadEvent.recipientUserId().toString(),
 				"/queue/notifications",
 				envelope
 		);

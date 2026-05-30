@@ -40,7 +40,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					.setClientPasscode(relayPasscode)
 					.setSystemLogin(relayLogin)
 					.setSystemPasscode(relayPasscode)
-					.setVirtualHost(relayVirtualHost);
+					.setVirtualHost(relayVirtualHost)
+					.setUserDestinationBroadcast("/topic/unresolved-user-destination") //The backend servers share a list of websocket users currently online.
+					.setUserRegistryBroadcast("/topic/simp-user-registry");;//If a node cannot find the user, it broadcasts the message so another node can send it.;
 		} else {
 			registry.enableSimpleBroker("/topic", "/queue");
 		}
