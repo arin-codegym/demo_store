@@ -8,7 +8,7 @@ function Footer() {
       <Container className='grid gap-10 py-10 md:grid-cols-[1.2fr_1fr_1fr]'>
         <div>
           <h2 className='text-base font-semibold uppercase tracking-wide text-white'>
-            Next Storefront
+            QuocHuy Developer
           </h2>
           <p className='mt-4 max-w-md text-sm leading-6 text-slate-400'>
             Cửa hàng trực tuyến với các sản phẩm được cập nhật nhanh, giỏ hàng
@@ -46,7 +46,10 @@ function Footer() {
             <Link className='transition-colors hover:text-white' href='/'>
               Trang chủ
             </Link>
-            <Link className='transition-colors hover:text-white' href='/products'>
+            <Link
+              className='transition-colors hover:text-white'
+              href='/products'
+            >
               Sản phẩm
             </Link>
             <Link className='transition-colors hover:text-white' href='/about'>
@@ -58,7 +61,8 @@ function Footer() {
 
       <div className='border-t border-white/10'>
         <Container className='py-4 text-center text-xs text-slate-500'>
-          © {new Date().getFullYear()} Next Storefront. All rights reserved.
+          © {new Date().getFullYear()} QuocHuy Developer. Bản quyền thuộc về tác
+          giả.
         </Container>
       </div>
     </footer>
