@@ -35,3 +35,8 @@ Only Nginx is public. Backend and frontend containers are reached through local 
 - RAG document search with pgvector and `tsvector`.
 - Admin product/user/order flows.
 - Chat, notifications, cart, favorites, reviews, and payments.
+## Run local
+`
+docker compose --env-file deploy\infra.env -f infra\docker-compose.infra.yml up -d redis rabbitmq
+$env:WS_RELAY_ENABLED="true"
+`

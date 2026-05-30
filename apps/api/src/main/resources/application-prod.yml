@@ -71,6 +71,23 @@ spring:
           starttls:
             enable: true
 
+  rabbitmq:
+    # AMQP connection for internal backend events (@RabbitListener/RabbitTemplate).
+    # This can point to the same RabbitMQ EC2 used by WebSocket STOMP relay, but uses port 5672.
+    host: ${RABBITMQ_AMQP_HOST:${RABBITMQ_STOMP_HOST:rabbitmq}}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_AMQP_USERNAME:${RABBITMQ_STOMP_LOGIN}}
+    password: ${RABBITMQ_AMQP_PASSWORD:${RABBITMQ_STOMP_PASSCODE}}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 5
+          multiplier: 2
+
 logging:
   level:
     root: INFO
@@ -103,6 +120,11 @@ app:
       passcode: ${RABBITMQ_STOMP_PASSCODE}
       virtual-host: ${RABBITMQ_VHOST:/}
   frontend-url: ${FRONTEND_URL}
+  chat:
+    rabbit-events:
+      # true = message.created realtime goes through RabbitMQ AMQP queue before WebSocket.
+      # Set false to use the old direct AFTER_COMMIT -> WebSocket flow.
+      enabled: ${CHAT_RABBIT_EVENTS_ENABLED:true}
   mail:
     enabled: ${APP_MAIL_ENABLED:true}
     from: ${APP_MAIL_FROM}

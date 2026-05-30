@@ -58,6 +58,20 @@ spring:
               - email
               - profile
 
+  rabbitmq:
+    host: ${RABBITMQ_AMQP_HOST:${RABBITMQ_STOMP_HOST:localhost}}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_AMQP_USERNAME:${RABBITMQ_STOMP_LOGIN:store_ws}}
+    password: ${RABBITMQ_AMQP_PASSWORD:${RABBITMQ_STOMP_PASSCODE:store_ws_password}}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000
+          max-attempts: 5
+          multiplier: 2
 logging:
   level:
     root: INFO
@@ -92,6 +106,9 @@ app:
       passcode: ${RABBITMQ_STOMP_PASSCODE:store_ws_password}
       virtual-host: ${RABBITMQ_VHOST:/}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  chat:
+    rabbit-events:
+      enabled: ${CHAT_RABBIT_EVENTS_ENABLED:false}
   mail:
     enabled: ${APP_MAIL_ENABLED:false}
     from: ${APP_MAIL_FROM:no-reply@localhost}

@@ -2,15 +2,16 @@ package com.quochuy.notification.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.quochuy.notification.realtime.NotificationRealtimePublisher;
+import com.quochuy.notification.dto.*;
+import com.quochuy.notification.event.NotificationCreatedEvent;
+import com.quochuy.notification.event.NotificationMarkAllAsReadEvent;
+import com.quochuy.notification.event.NotificationMarkAsReadEvent;
 import com.quochuy.notification.mapper.NotificationMapper;
-import com.quochuy.notification.dto.CreateNotificationCommand;
-import com.quochuy.notification.dto.NotificationDto;
-import com.quochuy.notification.dto.NotificationListResponse;
 import com.quochuy.notification.model.Notification;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +21,15 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class NotificationService {
 	private final NotificationMapper notificationMapper;
-	private final NotificationRealtimePublisher notificationRealtimePublisher;
 	private final ObjectMapper objectMapper;
 	private final ModelMapper modelMapper;
+	private final ApplicationEventPublisher eventPublisher;
 	
-	public NotificationDto createNotification(CreateNotificationCommand command) {
+	@Transactional
+	public void createNotification(CreateNotificationCommand command) {
 		Notification notification = new Notification();
 		notification.setNotificationId(UUID.randomUUID());
 		notification.setRecipientUserId(command.getRecipientUserId());
@@ -46,9 +47,9 @@ public class NotificationService {
 		notification.setCreatedAt(OffsetDateTime.now());
 		notificationMapper.insert(notification);
 		NotificationDto dto = toDto(notification);
-		notificationRealtimePublisher.publishCreated(notification.getRecipientUserId(), dto);
-		return dto;
+		eventPublisher.publishEvent(new NotificationCreatedEvent(command.getRecipientUserId(), dto));
 	}
+
 	
 	@Transactional(readOnly = true)
 	public NotificationListResponse getNotifications(UUID recipientUserId, String cursor,
@@ -70,6 +71,7 @@ public class NotificationService {
 		return notificationMapper.countUnread(recipientUserId);
 	}
 	
+	@Transactional
 	public NotificationDto markAsRead(UUID recipientUserId, UUID notificationId) {
 		OffsetDateTime readAt = OffsetDateTime.now();
 		notificationMapper.markAsRead(notificationId, recipientUserId, readAt);
@@ -79,16 +81,18 @@ public class NotificationService {
 			throw new RuntimeException("Notification not found");
 		}
 		NotificationDto dto = toDto(row);
-		notificationRealtimePublisher.publishRead(recipientUserId, notificationId, row.getReadAt());
+		eventPublisher.publishEvent(new NotificationMarkAsReadEvent(recipientUserId, notificationId, row.getReadAt()));
 		return dto;
 	}
 	
+	@Transactional
 	public void markAllAsRead(UUID recipientUserId) {
 		OffsetDateTime readAt = OffsetDateTime.now();
 		notificationMapper.markAllAsRead(recipientUserId, readAt);
-		notificationRealtimePublisher.publishReadAll(recipientUserId, readAt);
+		eventPublisher.publishEvent(new NotificationMarkAllAsReadEvent(recipientUserId, readAt));
 	}
 	
+
 	private NotificationDto toDto(Notification row) {
 		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 //		NotificationDto dto = new NotificationDto();
@@ -157,6 +161,7 @@ public class NotificationService {
 		return new CursorParts(OffsetDateTime.parse(parts[0]), parts[1]);
 	}
 	
+	@Transactional
 	public void markReadByConversation(UUID conversationId,UUID userId) {
 		notificationMapper.markReadByConversation(conversationId, userId);
 //		int updatedRows = notificationMapper.markReadByConversation(conversationId, userId);
@@ -170,4 +175,5 @@ public class NotificationService {
 	
 	private record CursorParts(OffsetDateTime createdAt, String id) {
 	}
+
 }

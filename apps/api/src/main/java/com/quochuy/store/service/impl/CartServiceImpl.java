@@ -7,6 +7,7 @@ import com.quochuy.store.service.CartMutationResult;
 import com.quochuy.store.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -115,7 +116,12 @@ public class CartServiceImpl implements CartService {
 	}
 
 	private Cart fetchOrCreateCart(UUID userId) {
-		cartMapper.createCart(userId);
+		try {
+			cartMapper.createCart(userId);
+		} catch (DuplicateKeyException e) {
+			// Trong môi trường Multi-node, nếu node khác đã tạo nhanh hơn, 
+			// ta chỉ cần bỏ qua lỗi và tiến hành fetch.
+		}
 		return cartMapper.fetchCartByUser(userId);
 	}
 
