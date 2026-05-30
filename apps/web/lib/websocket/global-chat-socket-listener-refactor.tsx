@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { IMessage } from '@stomp/stompjs';
 import {
   InfiniteData,
@@ -11,8 +11,11 @@ import { usePathname } from 'next/navigation';
 import { useCurrentUser } from '@/query/auth/useCurrentUser';
 import {
   connectStomp,
-  syncSubscriptions,
+  subscribeConversation,
+  subscribeNotifications,
+  subscribeSidebar,
   unsubscribeConversation,
+  unsubscribeNotifications,
   unsubscribeSidebar,
 } from '@/lib/websocket/chat-socket-refactor';
 import { queryKeys } from '@/query/query-keys';
@@ -101,6 +104,14 @@ export function GlobalChatSocketListenerRefactor() {
     aiWidgetOpen,
   ]);
 
+  /* Lý do cần ref: sidebar và notification chỉ subscribe một lần theo user/connect,
+   nhưng khi nhận socket message vẫn cần biết conversation hiện tại mới nhất. */
+  const activeConversationIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
+
   useEffect(() => {
     if (!me) return;
 
@@ -125,34 +136,51 @@ export function GlobalChatSocketListenerRefactor() {
   }, [me, queryClient]);
 
   useEffect(() => {
-    if (!me?.userId) {
+    if (!me?.userId || !stompConnected) {
       unsubscribeSidebar();
+      unsubscribeNotifications();
+      return;
+    }
+
+    const onSocketMessage = function (frame: IMessage): void {
+      handleSocketMessage({
+        frame,
+        meUserId: me.userId,
+        activeConversationId: activeConversationIdRef.current,
+        queryClient,
+      });
+    };
+
+    subscribeSidebar(me.userId, onSocketMessage);
+    subscribeNotifications(me.userId, onSocketMessage);
+
+    return () => {
+      unsubscribeSidebar();
+      unsubscribeNotifications();
+    };
+  }, [stompConnected, me?.userId, queryClient]);
+
+  useEffect(() => {
+    if (!me?.userId || !stompConnected || !activeConversationId) {
       unsubscribeConversation();
       return;
     }
 
     const onSocketMessage = function (frame: IMessage): void {
       handleSocketMessage({
-        frame: frame,
+        frame,
         meUserId: me.userId,
-        activeConversationId: activeConversationId,
-        queryClient: queryClient,
+        activeConversationId: activeConversationIdRef.current,
+        queryClient,
       });
     };
 
-    syncSubscriptions({
-      stompConnected,
-      userId: me.userId,
-      activeConversationId,
-      onMessage: onSocketMessage,
-    });
+    subscribeConversation(activeConversationId, onSocketMessage);
 
     return () => {
-      unsubscribeSidebar();
       unsubscribeConversation();
     };
   }, [stompConnected, me?.userId, activeConversationId, queryClient]);
-
   return null;
 }
 
