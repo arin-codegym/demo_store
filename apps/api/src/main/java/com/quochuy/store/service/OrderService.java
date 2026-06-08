@@ -10,6 +10,8 @@ public interface OrderService {
 	OrderDto createOrder(UUID userId, String email,
 						 String key);
 	
+	OrderDto getOrderDetail(UUID orderId, UUID userId);
+	
 	OrderDto exitsOrder(String key);
 	
 	List<Order> getPaidOrderByUserId(UUID userId);

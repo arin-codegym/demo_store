@@ -37,7 +37,7 @@ public class UserServiceImpl implements UserService {
 	
 	@Override
 	public Authentication buildAuthenticationByUserId(UUID userId) {
-		User user = userMapper.findById(userId);
+		User user = userMapper.findById(userId).orElseThrow(() -> null);
 		if (user == null ) {
 			return null; // hoặc throw Unauthorized
 		}

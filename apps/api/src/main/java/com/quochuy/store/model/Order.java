@@ -16,6 +16,11 @@ public class Order {
 	private String status;
 	private UUID userId;
 	private UUID cartId;
+	private UUID sourceCartId;
+	private String idempotencyKey;
+	private String currency;
+	private String stripeSessionId;
 	OffsetDateTime createdAt;
 	OffsetDateTime updatedAt;
+	OffsetDateTime paidAt;
 }

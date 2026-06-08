@@ -19,4 +19,18 @@ public interface CartMapper {
 	void createCart(@Param("userId") UUID userId);
 	
 	void clearCart(@Param("cartId") UUID cartId);
+	
+	Optional<Cart> findActiveCartByUserIdForUpdate(@Param("userId") UUID userId);
+	
+	int markCartLocked(@Param("cartId") UUID cartId);
+	
+	int markCartCheckedOut(@Param("cartId") UUID cartId);
+	
+	int createEmptyActiveCartForUser(
+			@Param("cartId") UUID cartId,
+			@Param("userId") UUID userId,
+			@Param("shipping") int shipping,
+			@Param("taxRate") double taxRate
+	);
+	
 }

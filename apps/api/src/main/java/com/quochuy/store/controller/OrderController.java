@@ -22,7 +22,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderController {
 	private static final String IDEMPOTENCY_KEY_CONSTRAINT = "uk_orders_idempotency_key";
-	private static final String LEGACY_IDEMPOTENCY_KEY_CONSTRAINT = "k_orders_idempotency_key";
 	private static final String ONE_PENDING_PER_USER_CONSTRAINT = "uk_orders_one_pending_per_user";
 	private static final String ONE_PENDING_PER_CART_CONSTRAINT = "uk_orders_one_pending_per_cart";
 	private final OrderServiceImpl orderServiceImpl;
@@ -38,16 +37,7 @@ public class OrderController {
 					userDetails.getUserId(), userDetails.getEmail(), key);
 			return ResponseEntity.ok(orderDto);
 		} catch (DataIntegrityViolationException e) {
-//				String sqlState = psql.getSQLState();  // 23505 = unique violation
-//				if ("23505".equals(
-//						sqlState) && psql.getMessage()
-//						.contains(
-//								"uk_orders_idempotency_key")) { // chỉ check idempotency_key còn lỗi khác thì throw lỗi để xác định chính xác lỗi
-//					return ResponseEntity.ok(
-//							orderService.exitsOrder(key));
-//				}
-			if (databaseExceptionUtil.isDuplicateKey(e, IDEMPOTENCY_KEY_CONSTRAINT)
-					|| databaseExceptionUtil.isDuplicateKey(e, LEGACY_IDEMPOTENCY_KEY_CONSTRAINT)) {
+			if (databaseExceptionUtil.isDuplicateKey(e, IDEMPOTENCY_KEY_CONSTRAINT)) {
 				return ResponseEntity.ok(orderServiceImpl.exitsOrder(key));
 			}
 			if (databaseExceptionUtil.isDuplicateKey(e, ONE_PENDING_PER_USER_CONSTRAINT)

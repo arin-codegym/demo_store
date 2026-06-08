@@ -74,6 +74,7 @@
                  LEFT JOIN public.cart_items ci ON c.cart_id = ci.cart_id
                  LEFT JOIN public.products p ON ci.product_id = p.product_id
         WHERE c.user_id = #{userId}
+          AND c.status = 'ACTIVE'
         ORDER BY ci.created_at DESC
     </select>
 
@@ -122,10 +123,18 @@
         tự động nạp UUID vừa sinh ra vào object Cart trong Java.
     -->
     <insert id="createCart">
-        INSERT INTO carts (user_id)
-        VALUES (#{userId})
-        ON CONFLICT (user_id) DO NOTHING
+        INSERT INTO carts (
+            user_id,
+            status
+        )
+        VALUES (
+                   #{userId},
+                   'ACTIVE'
+               )
+            ON CONFLICT (user_id) WHERE status = 'ACTIVE'
+            DO NOTHING
     </insert>
+
     <update id="clearCart">
         WITH deleted AS (
             DELETE
@@ -141,4 +150,67 @@
         WHERE cart_id = #{cartId}
     </update>
 
+    <select id="findActiveCartByUserIdForUpdate" resultType="com.quochuy.store.model.Cart">
+        SELECT
+            cart_id,
+            num_items_in_cart,
+            cart_total,
+            shipping,
+            tax,
+            tax_rate,
+            order_total,
+            created_at,
+            updated_at,
+            user_id,
+            status
+        FROM carts
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+            FOR UPDATE
+    </select>
+
+    <update id="markCartLocked">
+        UPDATE carts
+        SET status = 'LOCKED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE cart_id = #{cartId}
+          AND status = 'ACTIVE'
+    </update>
+
+    <update id="markCartCheckedOut">
+        UPDATE carts
+        SET status = 'CHECKED_OUT',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE cart_id = #{cartId}
+          AND status = 'LOCKED'
+    </update>
+
+    <insert id="createEmptyActiveCartForUser">
+        INSERT INTO carts (
+            cart_id,
+            user_id,
+            status,
+            num_items_in_cart,
+            cart_total,
+            shipping,
+            tax,
+            tax_rate,
+            order_total,
+            created_at,
+            updated_at
+        )
+        VALUES (
+                   #{cartId},
+                   #{userId},
+                   'ACTIVE',
+                   0,
+                   0,
+                   #{shipping},
+                   0,
+                   #{taxRate},
+                   0,
+                   CURRENT_TIMESTAMP,
+                   CURRENT_TIMESTAMP
+               )
+    </insert>
 </mapper>

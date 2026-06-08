@@ -2,6 +2,123 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.quochuy.store.mapper.OrderMapper">
+    <resultMap id="OrderResultMap" type="com.quochuy.store.model.Order">
+        <id property="orderId" column="order_id"/>
+        <result property="productsCount" column="products_count"/>
+        <result property="orderTotal" column="order_total"/>
+        <result property="tax" column="tax"/>
+        <result property="shipping" column="shipping"/>
+        <result property="email" column="email"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="userId" column="user_id"/>
+        <result property="idempotencyKey" column="idempotency_key"/>
+        <result property="status" column="status"/>
+        <result property="sourceCartId" column="source_cart_id"/>
+        <result property="currency" column="currency"/>
+        <result property="stripeSessionId" column="stripe_session_id"/>
+        <result property="paidAt" column="paid_at"/>
+    </resultMap>
+    <select id="findPendingByUserId" resultType="Order">
+        SELECT
+            order_id,
+            products_count,
+            order_total,
+            tax,
+            shipping,
+            email,
+            created_at,
+            updated_at,
+            user_id,
+            idempotency_key,
+            status,
+            source_cart_id,
+            currency,
+            stripe_session_id,
+            paid_at
+        FROM orders
+        WHERE user_id = #{userId}
+          AND status = 'PENDING'
+            LIMIT 1
+    </select>
+
+    <select id="findByOrderIdAndUserId" resultType="Order">
+        SELECT
+            order_id,
+            products_count,
+            order_total,
+            tax,
+            shipping,
+            email,
+            created_at,
+            updated_at,
+            user_id,
+            idempotency_key,
+            status,
+            source_cart_id,
+            currency,
+            stripe_session_id,
+            paid_at
+        FROM orders
+        WHERE order_id = #{orderId}
+          AND user_id = #{userId}
+    </select>
+
+    <insert id="insertOrder" parameterType="com.quochuy.store.model.Order">
+        INSERT INTO orders (
+            order_id,
+            products_count,
+            order_total,
+            tax,
+            shipping,
+            email,
+            user_id,
+            idempotency_key,
+            status,
+            source_cart_id,
+            currency,
+            created_at,
+            updated_at
+        )
+        VALUES (
+                   #{orderId},
+                   #{productsCount},
+                   #{orderTotal},
+                   #{tax},
+                   #{shipping},
+                   #{email},
+                   #{userId},
+                   #{idempotencyKey},
+                   #{status},
+                   #{sourceCartId},
+                   #{currency},
+                   CURRENT_TIMESTAMP,
+                   CURRENT_TIMESTAMP
+               )
+    </insert>
+
+    <update id="recalculateOrderTotalsFromItems">
+        UPDATE orders o
+        SET
+            products_count = totals.products_count,
+            tax = totals.tax,
+            order_total = totals.subtotal + o.shipping + totals.tax,
+            updated_at = CURRENT_TIMESTAMP
+            FROM (
+            SELECT
+                order_id,
+                COALESCE(SUM(amount), 0)::int4 AS products_count,
+                COALESCE(SUM(line_total), 0)::int4 AS subtotal,
+                ROUND(COALESCE(SUM(line_total), 0) * 0.1)::int4 AS tax
+            FROM order_items
+            WHERE order_id = #{orderId}
+            GROUP BY order_id
+            ) totals
+        WHERE o.order_id = totals.order_id
+          AND o.order_id = #{orderId}
+          AND o.status = 'PENDING'
+    </update>
+
 
     <select id="createOrder" resultType="Order">
         INSERT INTO orders (products_count, order_total, tax, shipping, email, user_id, cart_id,
@@ -16,24 +133,115 @@
                 #{key}) RETURNING *;
     </select>
 
+    <select id="createOrGetPendingOrder" resultType="Order">
+        WITH existing_by_key AS (
+            SELECT *
+            FROM orders
+            WHERE idempotency_key = #{key}
+        ),
+             inserted AS (
+        INSERT INTO orders (
+            products_count,
+            order_total,
+            tax,
+            shipping,
+            email,
+            user_id,
+            cart_id,
+            idempotency_key
+        )
+        SELECT
+            #{productsCount},
+            #{orderTotal},
+            #{tax},
+            #{shipping},
+            #{email},
+            #{userId},
+            #{cartId},
+            #{key}
+            WHERE NOT EXISTS (SELECT 1 FROM existing_by_key)
+          AND NOT EXISTS (
+              SELECT 1
+              FROM orders
+              WHERE user_id = #{userId}
+                AND status = 'PENDING'
+                )
+        ON CONFLICT DO NOTHING
+            RETURNING *
+            ),
+            existing_pending AS (
+        SELECT *
+        FROM orders
+        WHERE user_id = #{userId}
+          AND status = 'PENDING'
+          AND NOT EXISTS (SELECT 1 FROM existing_by_key)
+          AND NOT EXISTS (SELECT 1 FROM inserted)
+            )
+        SELECT *
+        FROM existing_by_key
+
+        UNION ALL
+
+        SELECT *
+        FROM inserted
+
+        UNION ALL
+
+        SELECT *
+        FROM existing_pending
+
+                 LIMIT 1
+    </select>
+
     <select id="findByIdempotencyKey" resultType="Order">
         SELECT *
         FROM orders
         WHERE idempotency_key = #{key}
     </select>
 
-    <select id="findPendingByUserId" resultType="Order">
-        SELECT *
-        FROM orders
-        WHERE user_id = #{userId}
-        AND status = 'PENDING'
-    </select>
-
     <select id="findByOrderId" resultType="Order">
-        SELECT *
+        SELECT
+            order_id,
+            products_count,
+            order_total,
+            tax,
+            shipping,
+            email,
+            created_at,
+            updated_at,
+            user_id,
+            idempotency_key,
+            status,
+            source_cart_id,
+            currency,
+            stripe_session_id,
+            paid_at
         FROM orders
         WHERE order_id = #{orderId}
     </select>
+
+    <select id="findByOrderIdForUpdate" resultType="Order">
+        SELECT
+            order_id,
+            products_count,
+            order_total,
+            tax,
+            shipping,
+            email,
+            created_at,
+            updated_at,
+            user_id,
+            idempotency_key,
+            status,
+            source_cart_id,
+            currency,
+            stripe_session_id,
+            paid_at
+        FROM orders
+        WHERE order_id = #{orderId}
+            FOR UPDATE
+    </select>
+
     <select id="findByOrderIdIsPaid" resultType="Order">
         SELECT *
         FROM orders
@@ -47,13 +255,31 @@
         WHERE status = 'PAID'
     </select>
 
+<!--    <select id="markPendingOrderPaid" resultType="java.util.UUID">-->
+<!--        UPDATE orders-->
+<!--        SET status = 'PAID'-->
+<!--        WHERE order_id = #{orderId}-->
+<!--          AND status = 'PENDING'-->
+<!--        RETURNING cart_id-->
+<!--    </select>-->
+
     <select id="markPendingOrderPaid" resultType="java.util.UUID">
         UPDATE orders
-        SET status = 'PAID'
+        SET status = 'PAID',
+            paid_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
         WHERE order_id = #{orderId}
           AND status = 'PENDING'
-        RETURNING cart_id
+            RETURNING source_cart_id
     </select>
+
+    <update id="saveStripeSessionId">
+        UPDATE orders
+        SET stripe_session_id = #{stripeSessionId},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE order_id = #{orderId}
+          AND status = 'PENDING'
+    </update>
 
     <delete id="deleteOrderIsPaid">
         DELETE
@@ -61,4 +287,48 @@
         WHERE user_id = #{userId}
     </delete>
 
+    <resultMap id="OrderWithItemsResultMap" type="com.quochuy.store.model.Order">
+        <id property="orderId" column="order_id"/>
+        <result property="status" column="status"/>
+        <result property="productsCount" column="products_count"/>
+        <result property="shipping" column="shipping"/>
+        <result property="tax" column="tax"/>
+        <result property="orderTotal" column="order_total"/>
+        <result property="currency" column="currency"/>
+        <result property="createdAt" column="created_at"/>
+
+        <collection property="orderItems" javaType="java.util.ArrayList" ofType="com.quochuy.store.model.OrderItem">
+            <id property="orderItemId" column="order_item_id"/>
+            <result property="productId" column="product_id"/>
+            <result property="productName" column="product_name"/>
+            <result property="productImage" column="product_image"/>
+            <result property="unitPrice" column="unit_price"/>
+            <result property="amount" column="amount"/>
+            <result property="lineTotal" column="line_total"/>
+        </collection>
+    </resultMap>
+
+    <select id="findOrderWithItemsByOrderId" resultMap="OrderWithItemsResultMap">
+        SELECT
+            o.order_id,
+            o.status,
+            o.products_count,
+            o.shipping,
+            o.tax,
+            o.order_total,
+            o.currency,
+            o.created_at,
+
+            oi.order_item_id,
+            oi.product_id,
+            oi.product_name,
+            oi.product_image,
+            oi.unit_price,
+            oi.amount,
+            oi.line_total
+        FROM orders o
+                 JOIN order_items oi ON oi.order_id = o.order_id
+        WHERE o.order_id = #{orderId}
+        ORDER BY oi.created_at ASC
+    </select>
 </mapper>

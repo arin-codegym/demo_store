@@ -8,6 +8,4 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PaymentRequest {
 	private String orderId;
-	@NotBlank(message = "CartId is required")
-	private String cartId;
 }

@@ -7,6 +7,7 @@ import com.quochuy.store.model.User;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Mapper
@@ -30,7 +31,7 @@ public interface UserMapper {
 	
 	void updateGoogleLink(User user); // link existing user to google + update profile
 	
-	User findById(@Param("userId") UUID userId);
+	Optional<User> findById(@Param("userId") UUID userId);
 	
 	List<User> getDashboardUsers();
 	

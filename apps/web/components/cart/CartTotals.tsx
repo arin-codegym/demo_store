@@ -4,11 +4,23 @@ import { formatCurrency } from '@/utils/format';
 import { Cart } from '@/utils/types';
 import { useCreateOrder } from '@/query/orders/useCreateOrder';
 import { Button } from '../ui/button';
+import { useRef } from 'react';
 
 function CartTotals({ cart }: { cart: Cart }) {
   const { cartTotal, shipping, tax, orderTotal } = cart;
   const { mutate, isPending } = useCreateOrder();
+  const placingOrderRef = useRef(false);
+  const handlePlaceOrder = () => {
+    if (placingOrderRef.current) return;
 
+    placingOrderRef.current = true;
+
+    mutate(undefined, {
+      onError: () => {
+        placingOrderRef.current = false;
+      },
+    });
+  };
   return (
     <div>
       <Card className='p-8 '>
@@ -19,13 +31,7 @@ function CartTotals({ cart }: { cart: Cart }) {
           <CartTotalRow label='Order Total' amount={orderTotal} lastRow />
         </CardTitle>
       </Card>
-      <Button
-        type='button'
-        onClick={() => {
-          if (!isPending) mutate();
-        }}
-        disabled={isPending}
-      >
+      <Button type='button' onClick={handlePlaceOrder} disabled={isPending}>
         {isPending ? 'Processing...' : 'Place Order'}
       </Button>
     </div>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { buildBackendProxyHeaders } from '@/lib/api/backend-proxy-headers';
 
 const BACKEND_URL = process.env.API_EXTERNAL;
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 30000;
 
 function jsonResponse(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
     console.error('API /payment/create-session error:', error);
 
     if (error instanceof Error && error.name === 'TimeoutError') {
-      return jsonResponse({ message: 'Payment backend request timed out' }, 504);
+      return jsonResponse(
+        { message: 'Payment backend request timed out' },
+        504,
+      );
     }
 
     return jsonResponse({ message: 'Error creating payment session' }, 500);

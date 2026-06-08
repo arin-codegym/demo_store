@@ -16,8 +16,7 @@ export function useCreateOrder() {
   const router = useRouter();
   const idempotencyKeyRef = useRef<string | null>(null);
 
-  const idempotencyKey =
-    idempotencyKeyRef.current ?? createIdempotencyKey();
+  const idempotencyKey = idempotencyKeyRef.current ?? createIdempotencyKey();
   idempotencyKeyRef.current = idempotencyKey;
 
   return useMutation({

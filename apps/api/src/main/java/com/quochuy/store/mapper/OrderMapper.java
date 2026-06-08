@@ -13,15 +13,44 @@ public interface OrderMapper {
 	Order createOrder(int productsCount, int orderTotal, int tax, int shipping, String email,
 					  @Param("userId") UUID userId, UUID cartId, String key);
 	
+	Order createOrGetPendingOrder(
+			@Param("productsCount") int productsCount,
+			@Param("orderTotal") int orderTotal,
+			@Param("tax") int tax,
+			@Param("shipping") int shipping,
+			@Param("email") String email,
+			@Param("userId") UUID userId,
+			@Param("cartId") UUID cartId,
+			@Param("key") String key
+	);
+	
 	Optional<Order> findByIdempotencyKey(String key);
 	
-	Optional<Order> findPendingByUserId(UUID userId);
 	
-	Order findByOrderId(UUID orderId);
+	Order findByOrderId(@Param("orderId") UUID orderId);
+	
+	Order findByOrderIdForUpdate(@Param("orderId") UUID orderId);
 	
 	List<Order> findByOrderIdIsPaid(UUID userId);
 	
-	UUID markPendingOrderPaid(@Param("orderId") UUID orderId);
 	
 	List<Order> getDashboardOrder();
+	
+	Optional<Order> findPendingByUserId(@Param("userId") UUID userId);
+	
+	Optional<Order> findByOrderIdAndUserId(
+			@Param("orderId") UUID orderId,
+			@Param("userId") UUID userId
+	);
+	
+	int insertOrder(Order order);
+	
+	int recalculateOrderTotalsFromItems(@Param("orderId") UUID orderId);
+	
+	UUID  markPendingOrderPaid(@Param("orderId") UUID orderId);
+	
+	int saveStripeSessionId(
+			@Param("orderId") UUID orderId,
+			@Param("stripeSessionId") String stripeSessionId
+	);
 }
