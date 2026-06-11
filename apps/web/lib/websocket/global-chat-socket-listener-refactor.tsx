@@ -20,6 +20,8 @@ import {
 } from '@/lib/websocket/chat-socket-refactor';
 import { queryKeys } from '@/query/query-keys';
 import type {
+  AiReplyDeltaPayload,
+  AiReplyDonePayload,
   ConversationSeenPayload,
   ConversationUpdatedPayload,
   Message,
@@ -209,6 +211,20 @@ function handleSocketMessage({
         );
         return;
 
+      case 'ai.reply.delta':
+        handleAiReplyDelta(
+          envelope.data as AiReplyDeltaPayload,
+          queryClient,
+        );
+        return;
+
+      case 'ai.reply.done':
+        handleAiReplyDone(
+          envelope.data as AiReplyDonePayload,
+          queryClient,
+        );
+        return;
+
       case 'conversation.updated':
         handleConversationUpdated(
           envelope.data as ConversationUpdatedPayload,
@@ -264,7 +280,13 @@ function handleMessageCreated(
   // backend state.
   queryClient.setQueryData<InfiniteData<Message[]> | undefined>(
     queryKey,
-    (old) => upsertMessageInInfiniteCache(old, payload),
+    (old) => {
+      const withoutStreaming =
+        payload.senderType === 'AI'
+          ? removeStreamingMessages(old, payload.conversationId)
+          : old;
+      return upsertMessageInInfiniteCache(withoutStreaming, payload);
+    },
   );
 
   queryClient.invalidateQueries({
@@ -281,6 +303,30 @@ function handleMessageCreated(
   if (isActiveConversation) {
     return;
   }
+}
+
+function handleAiReplyDelta(
+  payload: AiReplyDeltaPayload,
+  queryClient: QueryClient,
+) {
+  const queryKey = queryKeys.infiniteMessages(payload.conversationId);
+
+  queryClient.setQueryData<InfiniteData<Message[]> | undefined>(
+    queryKey,
+    (old) => upsertStreamingAiMessage(old, payload),
+  );
+}
+
+function handleAiReplyDone(
+  payload: AiReplyDonePayload,
+  queryClient: QueryClient,
+) {
+  const queryKey = queryKeys.infiniteMessages(payload.conversationId);
+
+  queryClient.setQueryData<InfiniteData<Message[]> | undefined>(
+    queryKey,
+    (old) => markStreamingAiMessageComplete(old, payload),
+  );
 }
 
 function handleConversationUpdated(
@@ -459,9 +505,74 @@ function upsertMessageInInfiniteCache(
   };
 }
 
+function upsertStreamingAiMessage(
+  old: InfiniteData<Message[]> | undefined,
+  payload: AiReplyDeltaPayload,
+): InfiniteData<Message[]> {
+  const streamingMessage: Message = {
+    messageId: `stream:${payload.streamId}`,
+    conversationId: payload.conversationId,
+    senderUserId: '',
+    senderType: 'AI',
+    clientMessageId: null,
+    content: payload.content,
+    status: 'SENT',
+    createdAt: payload.createdAt,
+    isTemp: true,
+    isStreaming: true,
+    streamId: payload.streamId,
+  };
+
+  return upsertMessageInInfiniteCache(old, streamingMessage);
+}
+
+function markStreamingAiMessageComplete(
+  old: InfiniteData<Message[]> | undefined,
+  payload: AiReplyDonePayload,
+): InfiniteData<Message[]> | undefined {
+  if (!old) return old;
+
+  return {
+    ...old,
+    pages: old.pages.map((page) =>
+      page.map((message) => {
+        if (message.streamId !== payload.streamId) return message;
+
+        return {
+          ...message,
+          content: payload.content || message.content,
+          isStreaming: false,
+        };
+      }),
+    ),
+  };
+}
+
+function removeStreamingMessages(
+  old: InfiniteData<Message[]> | undefined,
+  conversationId: string,
+): InfiniteData<Message[]> | undefined {
+  if (!old) return old;
+
+  return {
+    ...old,
+    pages: old.pages.map((page) =>
+      page.filter(
+        (message) =>
+          !(
+            message.conversationId === conversationId &&
+            message.senderType === 'AI' &&
+            !!message.streamId
+          ),
+      ),
+    ),
+  };
+}
+
 function isSameMessage(left: Message, right: Message) {
   return (
     left.messageId === right.messageId ||
+    (!!left.streamId && left.streamId === right.streamId) ||
     (!!left.clientMessageId && left.clientMessageId === right.clientMessageId)
   );
 }

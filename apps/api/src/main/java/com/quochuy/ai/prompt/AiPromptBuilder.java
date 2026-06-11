@@ -3,6 +3,8 @@ package com.quochuy.ai.prompt;
 import com.quochuy.ai.business.dto.AiBusinessContext;
 import com.quochuy.ai.business.dto.AiBusinessPrompt;
 import com.quochuy.ai.general.dto.GeneralPrompt;
+import com.quochuy.ai.product.dto.ProductComparisonContext;
+import com.quochuy.ai.product.dto.ProductComparisonPrompt;
 import com.quochuy.ai.rag.dto.RagPrompt;
 import com.quochuy.ai.rag.dto.RagRetrieveResult;
 import com.quochuy.chat.conversation.model.Conversation;
@@ -24,4 +26,8 @@ public interface AiPromptBuilder {
 							 RagRetrieveResult rag);
 	
 	GeneralPrompt buildGeneralPrompt(Conversation conversation, List<Message> recentMessages);
+	
+	ProductComparisonPrompt buildProductComparisonPrompt(Conversation conversation,
+														 List<Message> recentMessages,
+														 ProductComparisonContext context);
 }

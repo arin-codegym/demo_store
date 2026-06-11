@@ -48,6 +48,31 @@
         ORDER BY created_at
     </select>
 
+    <select id="searchTopProductsForAi" resultType="Product">
+        SELECT *
+        FROM products
+        <where>
+            <if test="query != null and query != ''">
+                AND (
+                    name ILIKE CONCAT('%', #{query}, '%')
+                    OR company ILIKE CONCAT('%', #{query}, '%')
+                    OR description ILIKE CONCAT('%', #{query}, '%')
+                    OR to_tsvector('english',
+                        coalesce(name,'') || ' ' || coalesce(company,'') || ' ' || coalesce(description,'')
+                    ) @@ websearch_to_tsquery('english', #{query})
+                )
+            </if>
+        </where>
+        ORDER BY
+            CASE
+                WHEN name ILIKE CONCAT('%', #{query}, '%') THEN 0
+                WHEN company ILIKE CONCAT('%', #{query}, '%') THEN 1
+                ELSE 2
+            END,
+            created_at DESC
+        LIMIT #{limit}
+    </select>
+
     <select id="fetchProductUserFavorites"
             resultType="Product">
         SELECT *

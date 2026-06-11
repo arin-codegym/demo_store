@@ -1,25 +1,21 @@
 package com.quochuy.ai.chat.service;
 
 import com.quochuy.ai.business.AiBusinessContextResolver;
-import com.quochuy.ai.business.BusinessLlmAnswerGenerator;
 import com.quochuy.ai.business.dto.AiBusinessContext;
 import com.quochuy.ai.business.dto.AiBusinessPrompt;
 import com.quochuy.ai.cache.model.AiAnswerCache;
 import com.quochuy.ai.cache.service.AiAnswerCacheService;
-import com.quochuy.ai.chat.dto.AiRoutedResponse;
+import com.quochuy.ai.chat.dto.AiRoutePlan;
 import com.quochuy.ai.chat.enums.AiAnswerSource;
 import com.quochuy.ai.faq.FaqMatcherService;
 import com.quochuy.ai.faq.dto.FaqMatchResult;
-import com.quochuy.ai.general.GeneralAnswerGenerator;
 import com.quochuy.ai.general.dto.GeneralPrompt;
 import com.quochuy.ai.prompt.AiPromptBuilder;
-import com.quochuy.ai.rag.answer.RagAnswerGenerator;
 import com.quochuy.ai.rag.dto.RagPrompt;
 import com.quochuy.ai.rag.dto.RagRetrieveResult;
 import com.quochuy.ai.rag.enums.RagAssistantCode;
 import com.quochuy.ai.rag.ingestion.RagAssistantCodeResolver;
 import com.quochuy.ai.rag.retrieval.RagRetriever;
-import com.quochuy.ai.shared.dto.AiGenerateResult;
 import com.quochuy.chat.conversation.model.Conversation;
 import com.quochuy.chat.message.model.Message;
 import lombok.RequiredArgsConstructor;
@@ -55,12 +51,9 @@ public class AiResponseRouter {
 	private final AiBusinessContextResolver aiBusinessContextResolver;
 	private final RagRetriever ragRetriever;
 	private final AiPromptBuilder aiPromptBuilder;
-	private final BusinessLlmAnswerGenerator businessLlmAnswerGenerator;
-	private final RagAnswerGenerator ragAnswerGenerator;
-	private final GeneralAnswerGenerator generalAnswerGenerator;
 	private final RagAssistantCodeResolver ragAssistantCodeResolver;
 	
-	public AiRoutedResponse route(
+	public AiRoutePlan routePlan(
 			Conversation conversation,
 			Message latestUserMessage,
 			List<Message> recentMessages
@@ -73,8 +66,8 @@ public class AiResponseRouter {
 		FaqMatchResult faqMatch = faqMatcherService.match(question);
 		if (faqMatch.isMatched()) {
 			log.info("AI router -> FAQ, intentCode={}", faqMatch.getIntentCode());
-			return AiRoutedResponse.builder()
-					.content(faqMatch.getAnswerText())
+			return AiRoutePlan.builder()
+					.directContent(faqMatch.getAnswerText())
 					.source(AiAnswerSource.FAQ)
 					.provider("internal-faq")
 					.model("rule-based")
@@ -91,8 +84,8 @@ public class AiResponseRouter {
 		AiAnswerCache cache = aiAnswerCacheService.findReusableAnswer(assistantCode, question);
 		if (cache != null) {
 			log.info("AI router -> CACHE, cacheId={}", cache.getCacheId());
-			return AiRoutedResponse.builder()
-					.content(cache.getAnswerText())
+			return AiRoutePlan.builder()
+					.directContent(cache.getAnswerText())
 					.source(AiAnswerSource.CACHE)
 					.provider("internal-cache")
 					.model("exact-question-cache")
@@ -117,8 +110,13 @@ public class AiResponseRouter {
 					context
 			);
 			
-			AiGenerateResult result = businessLlmAnswerGenerator.generate(prompt);
-			return aiResponse(result, AiAnswerSource.BUSINESS, false);
+			return promptPlan(
+					prompt.systemPrompt(),
+					prompt.userPrompt(),
+					AiAnswerSource.BUSINESS,
+					"business-chat-model",
+					false
+			);
 		}
 		
 		// Priority 4: retrieve document context, then ask the LLM to answer from it.
@@ -134,8 +132,13 @@ public class AiResponseRouter {
 					rag
 			);
 			
-			AiGenerateResult result = ragAnswerGenerator.generate(prompt);
-			return aiResponse(result, AiAnswerSource.RAG, true);
+			return promptPlan(
+					prompt.systemPrompt(),
+					prompt.userPrompt(),
+					AiAnswerSource.RAG,
+					"rag-chat-model",
+					false
+			);
 		}
 		
 		// Priority 5: final fallback for questions with no deterministic context.
@@ -147,9 +150,13 @@ public class AiResponseRouter {
 				recentMessages
 		);
 		
-		AiGenerateResult result = generalAnswerGenerator.generate(prompt);
-		boolean cacheable = aiAnswerCacheService.shouldCache(question, result.getContent());
-		return aiResponse(result, AiAnswerSource.AI, cacheable);
+		return promptPlan(
+				prompt.systemPrompt(),
+				prompt.userPrompt(),
+				AiAnswerSource.AI,
+				"gemini-2.5-flash",
+				true
+		);
 	}
 	
 	private boolean hasBusinessFacts(AiBusinessContext context) {
@@ -158,21 +165,21 @@ public class AiResponseRouter {
 //				&& !context.getFacts().isEmpty();
 	}
 	
-	private AiRoutedResponse aiResponse(
-			AiGenerateResult result,
+	private AiRoutePlan promptPlan(
+			String systemPrompt,
+			String userPrompt,
 			AiAnswerSource source,
-			boolean cacheable
+			String model,
+			boolean cacheableCandidate
 	) {
-		return AiRoutedResponse.builder()
-				.content(result.getContent())
+		return AiRoutePlan.builder()
+				.systemPrompt(systemPrompt)
+				.userPrompt(userPrompt)
 				.source(source)
-				.provider(result.getProvider())
-				.model(result.getModel())
-				.promptTokens(result.getPromptTokens())
-				.completionTokens(result.getCompletionTokens())
-				.totalTokens(result.getTotalTokens())
-				.latencyMs(result.getLatencyMs())
-				.cacheable(cacheable)
+				.provider("spring-ai")
+				.model(model)
+				.cacheable(false)
+				.cacheableCandidate(cacheableCandidate)
 				.build();
 	}
 }

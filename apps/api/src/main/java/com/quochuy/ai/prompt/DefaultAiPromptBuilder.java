@@ -3,6 +3,12 @@ package com.quochuy.ai.prompt;
 import com.quochuy.ai.business.dto.AiBusinessContext;
 import com.quochuy.ai.business.dto.AiBusinessPrompt;
 import com.quochuy.ai.general.dto.GeneralPrompt;
+import com.quochuy.ai.product.dto.ExternalProductContext;
+import com.quochuy.ai.product.dto.ExternalProductSearchResult;
+import com.quochuy.ai.product.dto.InternalProductContext;
+import com.quochuy.ai.product.dto.InternalProductFact;
+import com.quochuy.ai.product.dto.ProductComparisonContext;
+import com.quochuy.ai.product.dto.ProductComparisonPrompt;
 import com.quochuy.ai.rag.dto.RagChunk;
 import com.quochuy.ai.rag.dto.RagPrompt;
 import com.quochuy.ai.rag.dto.RagRetrieveResult;
@@ -12,6 +18,8 @@ import com.quochuy.chat.message.model.Message;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.StringJoiner;
 
 /**
@@ -127,6 +135,54 @@ public class DefaultAiPromptBuilder implements AiPromptBuilder {
 		return new GeneralPrompt(systemPrompt, userPrompt);
 	}
 	
+	@Override
+	public ProductComparisonPrompt buildProductComparisonPrompt(
+			Conversation conversation,
+			List<Message> recentMessages,
+			ProductComparisonContext context
+	) {
+		String systemPrompt = """
+                You are the store AI shopping assistant.
+                Answer in Vietnamese, clearly and concisely.
+                Compare products only from OWN_PRODUCT_CONTEXT and EXTERNAL_PRODUCT_CONTEXT.
+                Do not invent prices, specs, reviews, warranties, or availability.
+                External search snippets can be incomplete; mention uncertainty and cite source URLs when using them.
+                If either side lacks enough data, say exactly what is missing before giving a cautious recommendation.
+                """;
+		
+		String historyText = buildHistoryText(recentMessages);
+		String ownProductsText = buildInternalProductsText(context.internalProduct());
+		String externalProductsText = buildExternalProductsText(context.externalProduct());
+		
+		String userPrompt = """
+                RECENT_CHAT_HISTORY:
+                %s
+
+                USER_QUESTION:
+                %s
+
+                OWN_PRODUCT_CONTEXT:
+                %s
+
+                EXTERNAL_PRODUCT_CONTEXT:
+                %s
+
+                TASK:
+                - First summarize the matching store product facts.
+                - Then compare against the external product information.
+                - Include a compact comparison table when possible.
+                - End with a practical buying recommendation.
+                - If external data is missing or search is not configured, do not pretend to know live internet data.
+                """.formatted(
+				historyText,
+				safe(context.question()),
+				ownProductsText,
+				externalProductsText
+		);
+		
+		return new ProductComparisonPrompt(systemPrompt, userPrompt);
+	}
+	
 	private String buildHistoryText(List<Message> recentMessages) {
 		if (recentMessages == null || recentMessages.isEmpty()) {
 			return "";
@@ -170,6 +226,62 @@ public class DefaultAiPromptBuilder implements AiPromptBuilder {
 			));
 		}
 		return joiner.toString();
+	}
+	
+	private String buildInternalProductsText(InternalProductContext context) {
+		if (context == null || !context.hasProducts()) {
+			return "- No matching store product was found from the catalog search.";
+		}
+		StringJoiner joiner = new StringJoiner("\n\n");
+		for (InternalProductFact product : context.products()) {
+			joiner.add("""
+                    Product ID: %s
+                    Name: %s
+                    Company: %s
+                    Price: %s
+                    Description: %s
+                    Image: %s
+                    """.formatted(
+					product.productId(),
+					safe(product.name()),
+					safe(product.company()),
+					formatPrice(product.price()),
+					safe(product.description()),
+					safe(product.image())
+			));
+		}
+		return joiner.toString();
+	}
+	
+	private String buildExternalProductsText(ExternalProductContext context) {
+		if (context == null) {
+			return "- External search was not executed.";
+		}
+		if (!context.configured()) {
+			return "- External search is not available: " + safe(context.errorMessage());
+		}
+		if (!context.hasResults()) {
+			return "- External search returned no usable results for query: " + safe(context.query());
+		}
+		StringJoiner joiner = new StringJoiner("\n\n");
+		for (ExternalProductSearchResult result : context.results()) {
+			joiner.add("""
+                    Title: %s
+                    Snippet: %s
+                    URL: %s
+                    Site: %s
+                    """.formatted(
+					safe(result.title()),
+					safe(result.snippet()),
+					safe(result.url()),
+					safe(result.displayLink())
+			));
+		}
+		return joiner.toString();
+	}
+	
+	private String formatPrice(int price) {
+		return NumberFormat.getNumberInstance(new Locale("vi", "VN")).format(price) + " VND";
 	}
 	
 	private String extractLatestUserQuestion(List<Message> recentMessages) {

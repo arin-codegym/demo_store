@@ -141,6 +141,8 @@ export type Message = {
   status?: 'PENDING' | 'SENT' | 'FAILED';
   createdAt: string;
   isTemp?: boolean;
+  isStreaming?: boolean;
+  streamId?: string;
 };
 
 export type ChatableUser = {
@@ -168,6 +170,8 @@ export type MarkSeenRequest = {
 export type WsEnvelope<T = unknown> = {
   type:
     | 'message.created'
+    | 'ai.reply.delta'
+    | 'ai.reply.done'
     | 'conversation.updated'
     | 'conversation.seen'
     | 'notification.created'
@@ -177,6 +181,24 @@ export type WsEnvelope<T = unknown> = {
 };
 
 export type MessageCreatedPayload = Message;
+
+export type AiReplyDeltaPayload = {
+  conversationId: Id;
+  streamId: string;
+  delta?: string;
+  content: string;
+  source?: string;
+  createdAt: string;
+};
+
+export type AiReplyDonePayload = {
+  conversationId: Id;
+  streamId: string;
+  messageId: Id;
+  content: string;
+  source?: string;
+  createdAt: string;
+};
 
 export type ConversationUpdatedPayload = {
   conversationId: Id;

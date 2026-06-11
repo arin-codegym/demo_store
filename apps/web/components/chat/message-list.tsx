@@ -10,6 +10,7 @@ type Message = {
   senderUserId: string | null;
   senderType: 'USER' | 'AI';
   createdAt: string;
+  isStreaming?: boolean;
 };
 
 type Props = {
@@ -112,6 +113,12 @@ export function MessageList({
     return isSeen ? lastMyMessageId : null;
   }, [orderedMessages, lastMyMessageId, otherUserLastReadMessageId]);
 
+  const lastMessageRenderKey = useMemo(() => {
+    const last = orderedMessages[orderedMessages.length - 1];
+    if (!last) return '';
+    return `${last.messageId}:${last.content.length}:${last.isStreaming ? 'streaming' : 'done'}`;
+  }, [orderedMessages]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -190,7 +197,7 @@ export function MessageList({
     if (!shouldAutoScrollRef.current) return;
 
     el.scrollTop = el.scrollHeight;
-  }, [orderedMessages.length]);
+  }, [orderedMessages.length, lastMessageRenderKey]);
 
   if (isLoading) {
     return (
@@ -230,6 +237,7 @@ export function MessageList({
                 createdAtLabel={formatMessageTime(message.createdAt)}
                 isMine={isMine}
                 isAi={isAi}
+                isStreaming={message.isStreaming}
               />
 
               {isSeenReceiptTarget && (
