@@ -1,4 +1,4 @@
-package com.quochuy.ai.product;
+package com.quochuy.ai.product.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +8,7 @@ import com.quochuy.helper.AiExternalSearchProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -16,52 +16,59 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
+@Component
 @RequiredArgsConstructor
 @Log4j2
-public class GoogleCustomSearchExternalProductResearchService
-		implements ExternalProductResearchService {
+public class GoogleCustomSearchExternalProductSearchProvider
+		implements ExternalProductSearchProvider {
+	public static final String PROVIDER_NAME = "google-custom-search";
+	
 	private final AiExternalSearchProperties properties;
 	private final ObjectMapper objectMapper;
 	
 	@Override
-	public ExternalProductContext search(String query) {
-		String normalizedQuery = safe(query);
-		if (!properties.isEnabled()) {
-			return unavailable(normalizedQuery, "External product search is disabled.");
-		}
-		if (isBlank(properties.getApiKey()) || isBlank(properties.getCx())) {
-			return unavailable(normalizedQuery, "External product search API key/cx is not configured.");
-		}
-		if (normalizedQuery.isBlank()) {
-			return unavailable(normalizedQuery, "External product search query is blank.");
-		}
-		
+	public String providerName() {
+		return PROVIDER_NAME;
+	}
+	
+	@Override
+	public boolean isConfigured() {
+		AiExternalSearchProperties.Google google = properties.getGoogle();
+		return google != null
+				&& !isBlank(google.getApiKey())
+				&& !isBlank(google.getCx())
+				&& !isBlank(google.getEndpoint());
+	}
+	
+	@Override
+	public ExternalProductContext search(ExternalProductSearchRequest request) {
+		String query = safe(request.query());
 		try {
+			AiExternalSearchProperties.Google google = properties.getGoogle();
 			SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-			requestFactory.setConnectTimeout(properties.getTimeoutMs());
-			requestFactory.setReadTimeout(properties.getTimeoutMs());
+			requestFactory.setConnectTimeout(request.timeoutMs());
+			requestFactory.setReadTimeout(request.timeoutMs());
 			RestClient restClient = RestClient.builder()
 					.requestFactory(requestFactory)
 					.build();
 			
-			String uri = UriComponentsBuilder.fromUriString(properties.getEndpoint())
-					.queryParam("key", properties.getApiKey())
-					.queryParam("cx", properties.getCx())
-					.queryParam("q", normalizedQuery)
-					.queryParam("num", Math.max(1, Math.min(properties.getMaxResults(), 10)))
+			String uri = UriComponentsBuilder.fromUriString(google.getEndpoint())
+					.queryParam("key", google.getApiKey())
+					.queryParam("cx", google.getCx())
+					.queryParam("q", query)
+					.queryParam("num", Math.max(1, Math.min(request.maxResults(), 10)))
 					.build()
 					.toUriString();
 			
 			String body = restClient.get().uri(uri).retrieve().body(String.class);
 			List<ExternalProductSearchResult> results = parseResults(body);
-			return new ExternalProductContext(true, normalizedQuery, results, null);
+			return new ExternalProductContext(true, providerName(), query, results, null);
 		} catch (RestClientException ex) {
-			log.warn("External product search request failed: {}", ex.getMessage());
-			return unavailable(normalizedQuery, "External product search request failed.");
+			log.warn("Google CSE product search request failed: {}", ex.getMessage());
+			return unavailable(query, "Google CSE product search request failed.");
 		} catch (Exception ex) {
-			log.warn("External product search parse failed: {}", ex.getMessage());
-			return unavailable(normalizedQuery, "External product search response could not be parsed.");
+			log.warn("Google CSE product search parse failed: {}", ex.getMessage());
+			return unavailable(query, "Google CSE product search response could not be parsed.");
 		}
 	}
 	
@@ -87,7 +94,7 @@ public class GoogleCustomSearchExternalProductResearchService
 	}
 	
 	private ExternalProductContext unavailable(String query, String message) {
-		return new ExternalProductContext(false, query, List.of(), message);
+		return new ExternalProductContext(false, providerName(), query, List.of(), message);
 	}
 	
 	private String text(JsonNode node, String field) {

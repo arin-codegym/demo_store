@@ -12,16 +12,6 @@ spring:
   jmx:
     enabled: false
 
-ai:
-  external-search:
-    enabled: ${AI_EXTERNAL_SEARCH_ENABLED:false}
-    provider: google-custom-search
-    endpoint: ${AI_EXTERNAL_SEARCH_ENDPOINT:https://www.googleapis.com/customsearch/v1}
-    api-key: ${GOOGLE_CSE_API_KEY:}
-    cx: ${GOOGLE_CSE_ID:}
-    timeout-ms: ${AI_EXTERNAL_SEARCH_TIMEOUT_MS:5000}
-    max-results: ${AI_EXTERNAL_SEARCH_MAX_RESULTS:5}
-
 mybatis:
   # All mapper XML files are profile-independent.
   mapper-locations: classpath:mapper/*.xml

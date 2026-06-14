@@ -88,6 +88,25 @@ spring:
           max-attempts: 5
           multiplier: 2
 
+ai:
+  external-search:
+    enabled: ${AI_EXTERNAL_SEARCH_ENABLED:false}
+    provider: ${AI_EXTERNAL_SEARCH_PROVIDER:google-custom-search}
+    timeout-ms: ${AI_EXTERNAL_SEARCH_TIMEOUT_MS:5000}
+    max-results: ${AI_EXTERNAL_SEARCH_MAX_RESULTS:5}
+    google:
+      endpoint: ${GOOGLE_CSE_ENDPOINT:https://www.googleapis.com/customsearch/v1}
+      api-key: ${GOOGLE_CSE_API_KEY:}
+      cx: ${GOOGLE_CSE_ID:}
+    brave:
+      enabled: ${BRAVE_SEARCH_ENABLED:false}
+      endpoint: ${BRAVE_SEARCH_ENDPOINT:https://api.search.brave.com/res/v1/web/search}
+      api-key: ${BRAVE_SEARCH_API_KEY:}
+    tavily:
+      enabled: ${TAVILY_SEARCH_ENABLED:false}
+      endpoint: ${TAVILY_SEARCH_ENDPOINT:https://api.tavily.com/search}
+      api-key: ${TAVILY_SEARCH_API_KEY:}
+
 logging:
   level:
     root: INFO

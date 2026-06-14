@@ -258,19 +258,23 @@ public class DefaultAiPromptBuilder implements AiPromptBuilder {
 			return "- External search was not executed.";
 		}
 		if (!context.configured()) {
-			return "- External search is not available: " + safe(context.errorMessage());
+			return "- External search is not available. Provider: %s. Reason: %s"
+					.formatted(safe(context.provider()), safe(context.errorMessage()));
 		}
 		if (!context.hasResults()) {
-			return "- External search returned no usable results for query: " + safe(context.query());
+			return "- External search returned no usable results. Provider: %s. Query: %s"
+					.formatted(safe(context.provider()), safe(context.query()));
 		}
 		StringJoiner joiner = new StringJoiner("\n\n");
 		for (ExternalProductSearchResult result : context.results()) {
 			joiner.add("""
+                    Provider: %s
                     Title: %s
                     Snippet: %s
                     URL: %s
                     Site: %s
                     """.formatted(
+					safe(context.provider()),
 					safe(result.title()),
 					safe(result.snippet()),
 					safe(result.url()),

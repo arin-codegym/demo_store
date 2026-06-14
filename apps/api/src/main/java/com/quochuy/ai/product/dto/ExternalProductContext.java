@@ -4,6 +4,7 @@ import java.util.List;
 
 public record ExternalProductContext(
 		boolean configured,
+		String provider,
 		String query,
 		List<ExternalProductSearchResult> results,
 		String errorMessage
