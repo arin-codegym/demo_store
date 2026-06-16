@@ -1,16 +1,15 @@
 package com.quochuy.ai.product.provider;
 
 import com.quochuy.ai.product.dto.ExternalProductContext;
+import com.quochuy.ai.product.dto.ExternalProductSearchRequest;
 import com.quochuy.helper.AiExternalSearchProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 public class TavilyExternalProductSearchProvider implements ExternalProductSearchProvider {
-	public static final String PROVIDER_NAME = "tavily";
+	public static final String PROVIDER_NAME = "tavily-search";
 	
 	private final AiExternalSearchProperties properties;
 	
@@ -22,17 +21,15 @@ public class TavilyExternalProductSearchProvider implements ExternalProductSearc
 	@Override
 	public boolean isConfigured() {
 		AiExternalSearchProperties.Tavily tavily = properties.getTavily();
-		return tavily != null && tavily.isEnabled() && !isBlank(tavily.getApiKey());
+		return tavily != null && !isBlank(tavily.getApiKey()) && !isBlank(tavily.getEndpoint());
 	}
 	
 	@Override
 	public ExternalProductContext search(ExternalProductSearchRequest request) {
-		return new ExternalProductContext(
-				false,
+		return ExternalProductContext.unavailable(
 				providerName(),
 				request.query(),
-				List.of(),
-				"Tavily provider is reserved but not implemented yet."
+				"Tavily provider is not implemented yet."
 		);
 	}
 	

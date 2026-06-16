@@ -1,9 +1,8 @@
 package com.quochuy.ai.product.provider;
 
 import com.quochuy.ai.product.dto.ExternalProductContext;
+import com.quochuy.ai.product.dto.ExternalProductSearchRequest;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 public class NoOpExternalProductSearchProvider implements ExternalProductSearchProvider {
@@ -21,11 +20,9 @@ public class NoOpExternalProductSearchProvider implements ExternalProductSearchP
 	
 	@Override
 	public ExternalProductContext search(ExternalProductSearchRequest request) {
-		return new ExternalProductContext(
-				false,
+		return ExternalProductContext.unavailable(
 				providerName(),
 				request.query(),
-				List.of(),
 				"NoOp external product search provider is selected."
 		);
 	}

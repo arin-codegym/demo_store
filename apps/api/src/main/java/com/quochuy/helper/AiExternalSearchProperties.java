@@ -99,17 +99,8 @@ public class AiExternalSearchProperties {
 	}
 	
 	public static class Brave {
-		private boolean enabled;
 		private String endpoint = "https://api.search.brave.com/res/v1/web/search";
 		private String apiKey;
-		
-		public boolean isEnabled() {
-			return enabled;
-		}
-		
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
-		}
 		
 		public String getEndpoint() {
 			return endpoint;
@@ -129,17 +120,8 @@ public class AiExternalSearchProperties {
 	}
 	
 	public static class Tavily {
-		private boolean enabled;
 		private String endpoint = "https://api.tavily.com/search";
 		private String apiKey;
-		
-		public boolean isEnabled() {
-			return enabled;
-		}
-		
-		public void setEnabled(boolean enabled) {
-			this.enabled = enabled;
-		}
 		
 		public String getEndpoint() {
 			return endpoint;

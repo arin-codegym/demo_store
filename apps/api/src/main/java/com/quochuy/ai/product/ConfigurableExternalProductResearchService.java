@@ -1,9 +1,9 @@
 package com.quochuy.ai.product;
 
 import com.quochuy.ai.product.dto.ExternalProductContext;
-import com.quochuy.ai.product.dto.ExternalSearchIntent;
+import com.quochuy.ai.product.dto.ExternalProductResearchRequest;
+import com.quochuy.ai.product.dto.ExternalProductSearchRequest;
 import com.quochuy.ai.product.provider.ExternalProductSearchProvider;
-import com.quochuy.ai.product.provider.ExternalProductSearchRequest;
 import com.quochuy.helper.AiExternalSearchProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -33,8 +33,11 @@ public class ConfigurableExternalProductResearchService implements ExternalProdu
 	}
 	
 	@Override
-	public ExternalProductContext search(String query) {
-		String normalizedQuery = safe(query);
+	public ExternalProductContext search(ExternalProductResearchRequest request) {
+		ExternalProductResearchRequest normalizedRequest = request == null
+				? new ExternalProductResearchRequest("", null)
+				: request;
+		String normalizedQuery = normalizedRequest.query();
 		String providerName = normalize(properties.getProvider());
 		
 		if (!properties.isEnabled()) {
@@ -59,12 +62,12 @@ public class ConfigurableExternalProductResearchService implements ExternalProdu
 				normalizedQuery,
 				properties.getMaxResults(),
 				properties.getTimeoutMs(),
-				ExternalSearchIntent.PRODUCT_COMPARISON
+				normalizedRequest.intent()
 		));
 	}
 	
 	private ExternalProductContext unavailable(String provider, String query, String message) {
-		return new ExternalProductContext(false, provider, query, List.of(), message);
+		return ExternalProductContext.unavailable(provider, query, message);
 	}
 	
 	private String normalize(String value) {

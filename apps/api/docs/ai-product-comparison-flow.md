@@ -93,9 +93,21 @@ Important rule: `ProductComparisonService` must not know about Google, Brave, Ta
 | `ai/chat/service/StreamingLlmAnswerGenerator.java` | Calls Spring AI streaming API and emits chunks. |
 | `ai/chat/service/AiStreamPublisher.java` | Publishes `ai.reply.delta` and `ai.reply.done` WebSocket events. |
 
-## Provider Contract
+## Service And Provider Contracts
 
-Each provider implements:
+The business-facing service receives the search intent explicitly:
+
+```java
+public interface ExternalProductResearchService {
+    ExternalProductContext search(ExternalProductResearchRequest request);
+}
+```
+
+`ExternalProductResearchRequest` carries the user-derived query and an
+`ExternalSearchIntent`, such as `PRODUCT_COMPARISON`, `PRODUCT_RESEARCH`, or
+`PRICE_CHECK`.
+
+Each concrete search provider implements:
 
 ```java
 public interface ExternalProductSearchProvider {
@@ -114,8 +126,12 @@ Provider names currently available:
 | NoOp | `noop` |
 | Mock | `mock` |
 | Google Custom Search | `google-custom-search` |
-| Brave Search | `brave` |
-| Tavily | `tavily` |
+| Brave Search | `brave-search` |
+| Tavily | `tavily-search` |
+
+Brave Search and Tavily are currently reserved provider shells. If selected
+before a real API implementation is added, they return an unavailable
+`ExternalProductContext` instead of pretending to have searched the web.
 
 ## Configuration
 
@@ -139,11 +155,9 @@ ai:
       api-key: ${GOOGLE_CSE_API_KEY:}
       cx: ${GOOGLE_CSE_ID:}
     brave:
-      enabled: ${BRAVE_SEARCH_ENABLED:false}
       endpoint: ${BRAVE_SEARCH_ENDPOINT:https://api.search.brave.com/res/v1/web/search}
       api-key: ${BRAVE_SEARCH_API_KEY:}
     tavily:
-      enabled: ${TAVILY_SEARCH_ENABLED:false}
       endpoint: ${TAVILY_SEARCH_ENDPOINT:https://api.tavily.com/search}
       api-key: ${TAVILY_SEARCH_API_KEY:}
 ```
@@ -218,7 +232,9 @@ This lets the frontend show something like "I found this shop product..." before
 `ProductComparisonService` calls:
 
 ```java
-externalProductResearchService.search(externalQuery)
+externalProductResearchService.search(
+    new ExternalProductResearchRequest(externalQuery, ExternalSearchIntent.PRODUCT_COMPARISON)
+)
 ```
 
 `ConfigurableExternalProductResearchService` then:
@@ -227,7 +243,8 @@ externalProductResearchService.search(externalQuery)
 2. Reads `ai.external-search.provider`.
 3. Finds the matching `ExternalProductSearchProvider`.
 4. Checks `provider.isConfigured()`.
-5. Calls `provider.search(request)`.
+5. Builds an `ExternalProductSearchRequest` with query, intent, timeout, and max result config.
+6. Calls `provider.search(request)`.
 
 If search is disabled, unknown, or not configured, it returns an `ExternalProductContext` with `configured=false` and an explanatory `errorMessage`.
 
@@ -316,7 +333,7 @@ public class NewVendorExternalProductSearchProvider implements ExternalProductSe
     @Override
     public ExternalProductContext search(ExternalProductSearchRequest request) {
         // Call vendor API, parse response, map to ExternalProductSearchResult.
-        return new ExternalProductContext(true, providerName(), request.query(), results, null);
+        return ExternalProductContext.success(providerName(), request.query(), results);
     }
 }
 ```

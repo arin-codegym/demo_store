@@ -2,6 +2,7 @@ package com.quochuy.ai.product.provider;
 
 import com.quochuy.ai.product.dto.ExternalProductContext;
 import com.quochuy.ai.product.dto.ExternalProductSearchResult;
+import com.quochuy.ai.product.dto.ExternalProductSearchRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -22,8 +23,7 @@ public class MockExternalProductSearchProvider implements ExternalProductSearchP
 	
 	@Override
 	public ExternalProductContext search(ExternalProductSearchRequest request) {
-		return new ExternalProductContext(
-				true,
+		return ExternalProductContext.success(
 				providerName(),
 				request.query(),
 				List.of(new ExternalProductSearchResult(
@@ -31,8 +31,7 @@ public class MockExternalProductSearchProvider implements ExternalProductSearchP
 						"Mock result for development only. Configure a real provider for live web data.",
 						"mock://external-product-search",
 						"mock"
-				)),
-				null
+				))
 		);
 	}
 }

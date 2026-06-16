@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.quochuy.ai.product.dto.ExternalProductContext;
 import com.quochuy.ai.product.dto.ExternalProductSearchResult;
+import com.quochuy.ai.product.dto.ExternalProductSearchRequest;
 import com.quochuy.helper.AiExternalSearchProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -62,7 +63,7 @@ public class GoogleCustomSearchExternalProductSearchProvider
 			
 			String body = restClient.get().uri(uri).retrieve().body(String.class);
 			List<ExternalProductSearchResult> results = parseResults(body);
-			return new ExternalProductContext(true, providerName(), query, results, null);
+			return ExternalProductContext.success(providerName(), query, results);
 		} catch (RestClientException ex) {
 			log.warn("Google CSE product search request failed: {}", ex.getMessage());
 			return unavailable(query, "Google CSE product search request failed.");
@@ -94,7 +95,7 @@ public class GoogleCustomSearchExternalProductSearchProvider
 	}
 	
 	private ExternalProductContext unavailable(String query, String message) {
-		return new ExternalProductContext(false, providerName(), query, List.of(), message);
+		return ExternalProductContext.unavailable(providerName(), query, message);
 	}
 	
 	private String text(JsonNode node, String field) {

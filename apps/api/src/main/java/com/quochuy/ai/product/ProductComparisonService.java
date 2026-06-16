@@ -1,6 +1,8 @@
 package com.quochuy.ai.product;
 
 import com.quochuy.ai.product.dto.ExternalProductContext;
+import com.quochuy.ai.product.dto.ExternalProductResearchRequest;
+import com.quochuy.ai.product.dto.ExternalSearchIntent;
 import com.quochuy.ai.product.dto.InternalProductContext;
 import com.quochuy.ai.product.dto.InternalProductFact;
 import com.quochuy.ai.product.dto.ProductComparisonContext;
@@ -38,7 +40,12 @@ public class ProductComparisonService {
 				question,
 				internalProduct.products().stream().map(InternalProductFact::name).toList()
 		);
-		ExternalProductContext externalProduct = externalProductResearchService.search(externalQuery);
+		ExternalProductContext externalProduct = externalProductResearchService.search(
+				new ExternalProductResearchRequest(
+						externalQuery,
+						ExternalSearchIntent.PRODUCT_COMPARISON
+				)
+		);
 		return new ProductComparisonContext(question, internalProduct, externalProduct);
 	}
 	

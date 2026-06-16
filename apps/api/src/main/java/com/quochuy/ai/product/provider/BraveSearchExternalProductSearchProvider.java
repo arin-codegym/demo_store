@@ -1,16 +1,15 @@
 package com.quochuy.ai.product.provider;
 
 import com.quochuy.ai.product.dto.ExternalProductContext;
+import com.quochuy.ai.product.dto.ExternalProductSearchRequest;
 import com.quochuy.helper.AiExternalSearchProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 public class BraveSearchExternalProductSearchProvider implements ExternalProductSearchProvider {
-	public static final String PROVIDER_NAME = "brave";
+	public static final String PROVIDER_NAME = "brave-search";
 	
 	private final AiExternalSearchProperties properties;
 	
@@ -22,17 +21,15 @@ public class BraveSearchExternalProductSearchProvider implements ExternalProduct
 	@Override
 	public boolean isConfigured() {
 		AiExternalSearchProperties.Brave brave = properties.getBrave();
-		return brave != null && brave.isEnabled() && !isBlank(brave.getApiKey());
+		return brave != null && !isBlank(brave.getApiKey()) && !isBlank(brave.getEndpoint());
 	}
 	
 	@Override
 	public ExternalProductContext search(ExternalProductSearchRequest request) {
-		return new ExternalProductContext(
-				false,
+		return ExternalProductContext.unavailable(
 				providerName(),
 				request.query(),
-				List.of(),
-				"Brave provider is reserved but not implemented yet."
+				"Brave Search provider is not implemented yet."
 		);
 	}
 	
